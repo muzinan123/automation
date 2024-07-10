@@ -1,0 +1,250 @@
+{% extends "framework/base_with_dropdown.html" %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">通知列表</strong></div>
+        </div>
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12" id="notification-list">
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="login_date" type="text" class="am-form-field" placeholder="选择日期" data-am-datepicker="{theme: 'default'}" v-model="createAt" readonly>
+                    <span class="am-input-group-btn">
+                        <button id="calendar" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-calendar"></span> </button>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="query" type="text" class="am-form-field" placeholder="内容" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-1 am-u-sm-1">
+                    <span class="am-input-group-btn">
+                        <a class="am-btn am-btn-default" @click="all_read"><span class="am-icon-check"></span> 全部已读</a>
+                    </span>
+                </div>
+
+                <table class="am-table am-table-striped am-table-hover table-main" id="his_list">
+                    <thead>
+                    <tr>
+                        <th class="table-title"></th>
+                        <th class="table-title">内容</th>
+                        <th class="table-title">类别</th>
+                        <th class="table-title">通知时间</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in msglist">
+                            <td>
+                                <span v-if="line.readed"><i class="am-icon-check am-icon-fw"></i> 已读</span>
+                                <span v-if="!line.readed"><i class="am-icon-exclamation am-icon-fw"></i> 未读</span>
+                            </td>
+                            <td v-html="line.content" @click="read(line.id)"></td>
+                            <td>${line.type|get_workflow_type_name}</td>
+                            <td>${line.created_at}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="prev">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="next">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+
+    <div id="errorModal">
+        <dialog v-bind:show.sync="show">
+            <span slot="header">错误</span>
+            <span slot="body">${msg}</span>
+            <span slot="footer" class="am-modal-btn" @click="close">确定</span>
+        </dialog>
+    </div>
+
+    <template id="dialog">
+        <div>
+            <div class="am-modal am-modal-alert" v-bind:class="{ 'am-modal-active': show }" tabindex="-1" v-if="show" style="display:block;">
+                <div class="am-modal-dialog" style="width:300px;">
+                    <div class="am-modal-hd">
+                        <slot name="header"></slot>
+                        <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close @click="close">&times;</a>
+                    </div>
+                    <div class="am-modal-bd">
+                        <slot name="body"></slot>
+                    </div>
+                    <div class="am-modal-footer">
+                        <slot name="footer"></slot>
+                    </div>
+                </div>
+            </div>
+            <div class="am-dimmer" data-am-dimmer v-bind:class="{ 'am-active': show }" v-if="show" style="display:block;"></div>
+        </div>
+    </template>
+
+{% endblock %}
+
+{% block css %}
+
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+
+    data = {
+        query: '',
+        createAt: '',
+        msglist: [],
+        total: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1
+    }
+
+    new Vue({
+        el: '#notification-list',
+        data: data,
+        methods: {
+            prev: function(event){
+                load_notification_list(this.now*1-1);
+            },
+            go: function(event){
+                load_notification_list(event.target.innerHTML);
+            },
+            next: function(event){
+                load_notification_list(this.now*1+1);
+            },
+            filter: function(event){
+                load_notification_list(this.now);
+            },
+            read: function(id){
+                set_read(id);
+            },
+            all_read: function(){
+                set_all_read();
+            }
+        }
+    })
+
+    Vue.component('dialog', {
+	    template: '#dialog',
+	    props: {
+	        show:{
+	            type: Boolean,
+	            default: false
+	        }
+	    },
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	})
+
+	var errorModal = new Vue({
+	    el: '#errorModal',
+	    data: {
+			show: false,
+			msg: ''
+		},
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	})
+
+    $(document).ready(function() {
+
+        load_notification_list(data.now);
+
+    });
+    function set_all_read(){
+        jQuery.ajax({
+            url: "{{url_for('notification_list__list')}}",
+            dataType: "json",
+            data: {"all": true, "r":Math.random()},
+            type: "POST",
+            timeout : timeout,
+            success: function(response) {
+                load_notification_list(data.now);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                //be quite
+            }
+        });
+    }
+    function set_read(id){
+        jQuery.ajax({
+            url: "{{url_for('notification_list__list')}}",
+            dataType: "json",
+            data: {"id": id, "r":Math.random()},
+            type: "POST",
+            timeout : timeout,
+            success: function(response) {
+                //be quite
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                //be quite
+            }
+        });
+    }
+    function load_notification_list(p){
+        data.now = p;
+        $.AMUI.progress.start();
+        console.log("start load user list");
+        jQuery.ajax({
+            url: "{{url_for('notification_list__list')}}",
+            dataType: "json",
+            data: {"p": p ,"query": data.query ,"createAt":data.createAt, "r":Math.random()},
+            type: "GET",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                data.total = response.data.total;
+                paging(response.data.prevNum, response.data.nextNum, response.data.total, response.data.perPage)
+                data.msglist = []
+                response.data.msgList.forEach(function(e){
+                    data.msglist.push(e);
+                });
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+</script>
+
+{% endblock %}

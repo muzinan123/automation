@@ -1,0 +1,583 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n0" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">自动化测试打包</strong> / <small>项目列表</small></div>
+        </div>
+        <div class="am-g" id="project_list" v-cloak>
+            <div class="am-u-sm-12 am-u-md-12" style="overflow:auto;">
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="query" type="text" class="am-form-field" placeholder="应用名称、分支查询" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-1 am-u-sm-2">
+                    <a class="am-btn am-btn-success" href="{{url_for('autciProjectProfile.aut_ci_project_create')}}" target="_blank">新增项目</a>
+                </div>
+
+                <table class="am-table" >
+                    <thead>
+                    <tr>
+                        <th class="table-title">所属</th>
+                        <th class="table-title">应用名称</th>
+                        <th class="table-title">分支</th>
+                        <th class="table-title">构建次数</th>
+                        <th class="table-title">最后一次构建时间</th>
+                        <th class="table-title">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in ci_project_list">
+                            <td>${line.company.name}-${line.department.name}-${line.production.name}</td>
+                            <td>${line.app_name}</td>
+                            <td>
+                                <a href="#" @click="edit(line.project_id, line.app_name, line.app_id, line.branch, line.jdk_version)" class="am-btn am-btn-sm am-btn-primary am-round" title="编辑分支">${line.branch}</a>
+                            </td>
+                            <td>
+                                <a href="#" @click="go_record(line.project_id)" class="am-btn am-btn-sm am-btn-primary am-round" title="查看构建记录">
+                                    ${line.build_count}&nbsp;
+                                    <i class="am-icon-list"></i>
+                                </a>
+                            </td>
+                            <td>${line.last_build_time}</td>
+                            <td>
+                                <div>
+                                    <a v-if="line.app_type=='app'" href="#" class="am-btn am-btn-sm am-btn-primary am-round" @click="view_antx(line.app_id, line.project_id, line.app_name)">查看Antx</a>
+                                    <a v-if="line.app_type=='app' && line.status=='ready'" href="#" class="am-btn am-btn-sm am-btn-warning am-round" @click="edit_antx(line.app_id, line.project_id)">编辑Antx</a>
+                                    <a v-if="line.status=='ready'" href="#" class="am-icon-btn am-icon-play am-icon-btn-sm am-success" @click="build(line.app_id, line.project_id)" title="开始构建"></a>
+                                    <a v-if="line.status!='ready'" class="am-icon-btn am-icon-gear am-icon-spin am-icon-btn-sm am-success" title="正在构建"></a>
+                                    <a v-if="line.status=='ready'" href="#" class="am-icon-btn am-icon-edit am-icon-btn-sm am-primary" @click="edit(line.project_id, line.app_name, line.app_id, line.branch, line.jdk_version)" title="编辑"></a>
+                                    <a v-if="line.status=='ready'" href="#" class="am-icon-btn am-icon-remove am-icon-btn-sm am-danger" @click="del(line.app_id, line.project_id)" title="删除"></a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="first">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="last">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block html %}
+    <div id="confirmModal">
+        <modal :show="show" v-on:close="close">
+            <span slot="header">确认</span>
+            <span slot="body">${msg}</span>
+            <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+            <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+        </modal>
+    </div>
+
+    <div id="editModal">
+        <modal :show="show" :width="width" v-on:close="close">
+            <span slot="header">编辑</span>
+            <div slot="body">
+                <div class="am-form">
+                    <div class="am-form-group">
+                        <label class="am-fl">应用名称</label>
+                        <input type="text" :value="app_name" disabled="disabled"/>
+                    </div>
+                    <div class="am-form-group">
+                        <label class="am-fl">选择分支</label>
+                        <select data-am-selected="{searchBox: 1, maxHeight: '300px', dropUp: 1}" id="branch_selected" v-model="branch">
+                            <optgroup label="tag & trunk">
+                                <option value="tag">tag</option>
+                                <option value="trunk">trunk</option>
+                            </optgroup>
+                            <optgroup label="branch">
+                                <option v-for="one in branch_list" :value="one">${one}</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="am-form-group" style="text-align:left;">
+                        <label>JDK版本<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></label>
+                        <div>
+                            <label class="am-radio-inline">
+                                <input type="radio"  value="1.7" v-model="jdk_version"> 1.7
+                            </label>
+                            <label class="am-radio-inline">
+                                <input type="radio" value="1.8" v-model="jdk_version"> 1.8
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+            <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+        </modal>
+    </div>
+    <div id="editAntxModal">
+        <modal :show="show" :width="width" v-on:close="close">
+            <span slot="header">ANTX打包配置文件</span>
+            <div slot="body">
+                <div class="am-form">
+                    <span class="am-badge am-badge-secondary am-text-default">${app_name}.properties</span>
+                    <span class="am-badge am-text-default" style="margin-right:20px">${env|get_env_name}</span>
+                    <hr style="margin:5px;">
+                    <div class="am-form-group">
+                        <label class="am-checkbox-inline">
+                            <input type="checkbox" v-model="kv_edit"> 格式检查
+                        </label>
+                    </div>
+                </div>
+                <table class="am-table am-table-bordered am-table-compact" style="word-break:break-all;">
+                    <thead>
+                        <tr>
+                            <th width="50%">文本编辑</th>
+                            <th v-if="kv_edit" width="50%" colspan="2">格式检查</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td :rowspan="content_list.length+1">
+                                <textarea id="editAntxModalcontent" v-model="content" style="margin-top:28px;line-height:34px;width:100%;resize:none;"></textarea>
+                            </td>
+                            <td v-if="kv_edit" width="15%">Key</td>
+                            <td v-if="kv_edit" width="35%">Value</td>
+                        </tr>
+                        <tr v-if="kv_edit" v-for="line in content_list">
+                            <td v-if="line.k && line.v">${line.k}</td>
+                            <td v-if="line.k && line.v">${line.v}</td>
+                            <td v-if="!line.k && line.v" class="am-danger"><i>no key</i></td>
+                            <td v-if="!line.k && line.v">${line.v}</td>
+                            <td v-if="line.k && !line.v">${line.k}</td>
+                            <td v-if="line.k && !line.v" class="am-danger"><i>no value</i></td>
+                            <td v-if="!line.k && !line.v" colspan="2"><i>white line</i></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <span slot="footer" class="am-modal-btn" @click="commit">保存</span>
+            <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+        </modal>
+    </div>
+    <div id="showAntxModal">
+        <modal :show="show" :width="width" v-on:close="close">
+            <span slot="header">ANTX打包配置文件</span>
+            <div slot="body">
+                <div>
+                    <span class="am-badge am-badge-secondary am-text-default">${app_name}.properties</span>
+                    <span class="am-badge am-text-default" style="margin-right:20px">${env|get_env_name}</span>
+                </div>
+                <hr style="margin:5px;">
+                <table class="am-table am-table-bordered" style="word-break:break-all;">
+                    <thead>
+                        <tr>
+                            <th width="5%"></th>
+                            <th width="15%">key</th>
+                            <th width="35%">修改前</th>
+                            <th width="45%" colspan="2">修改后</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line, idx in diff_list">
+                            <td>
+                                ${idx+1}
+                            </td>
+                            <td>
+                                ${line.k}
+                            </td>
+                            <td>
+                                ${line.ov}
+                            </td>
+                            <td width="3%">
+                                <center v-if="!line.ov && line.nv">＋</center>
+                                <center v-if="line.ov && !line.nv">－</center>
+                                <center v-if="line.ov && line.nv && line.ov==line.nv">&nbsp;</center>
+                                <center v-if="line.ov && line.nv && line.ov!=line.nv">≠</center>
+                            </td>
+                            <td v-if="!line.ov && line.nv" class="am-success">
+                                ${line.nv}
+                            </td>
+                            <td v-if="line.ov && line.nv && line.ov==line.nv">
+                                ${line.nv}
+                            </td>
+                            <td v-if="line.ov && line.nv && line.ov!=line.nv" class="am-primary">
+                                ${line.nv}
+                            </td>
+                            <td v-if="line.ov && !line.nv" class="am-danger">
+                                ${line.nv}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </modal>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/md5.min.js') }}"></script>
+<script language="JavaScript">
+
+    var showAntxModal = new Vue({
+       el: '#showAntxModal',
+       data: {
+            show: false,
+            width: 1300,
+            app_name: '',
+            env: '',
+            diff_list: [],
+       },
+       methods: {
+           close: function(){
+               this.show = false
+            },
+           load: function(app_id, project_id){
+               this.$http.get("{{url_for('antxProfile.project_antx')}}", {params: {'action': 'show', 'project_id': project_id, 'env': 'aut', 'app_id': app_id}, emulateJSON: true}).then(
+               function(response){
+                   if(response.data.result == 1){
+                       showAntxModal.env = response.data.data.env;
+                       showAntxModal.app_name = response.data.data.app_name;
+                       showAntxModal.diff_list = [];
+                       response.data.data.diff.forEach(function(e){
+                           showAntxModal.diff_list.push(e)
+                       });
+                   }
+               },function(res){
+                   errorModal.msg='网络连接异常，请稍后重试。';
+                   errorModal.show=true;
+               });
+           }
+       }
+    });
+
+    var editAntxModal = new Vue({
+        el: '#editAntxModal',
+        data: {
+            show: false,
+            width: 1300,
+            app_name: '',
+            app_id: 0,
+            project_id: '',
+            env: '',
+            content: '',
+            content_list: [],
+            kv_edit: false,
+        },
+        methods: {
+            close: function(){
+                this.show = false
+            },
+            load: function(app_id, project_id){
+                this.app_id = app_id
+                this.project_id = project_id
+                this.$http.get("{{url_for('antxProfile.project_antx')}}", {params: {'action': 'edit', 'project_id': project_id, 'env': 'aut', 'app_id': app_id}, emulateJSON: true}).then(
+                function(response){
+                    if(response.data.result == 1){
+                        editAntxModal.env = response.data.data.env;
+                        editAntxModal.app_name = response.data.data.app_name;
+                        editAntxModal.content_list = [];
+                        content = []
+                        editAntxModal.content_list = []
+                        response.data.data.content.forEach(function(e){
+                            content.push( e.k + " = " + e.v);
+                        })
+                        editAntxModal.content = content.join("\r\n");
+
+                        setTimeout('$("#editAntxModalcontent").css("height",($("#editAntxModalcontent")[0].scrollHeight+2)+"px")', 10);
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            commit: function(){
+                content_list = []
+                editAntxModal.content_list.forEach(function(l, idx){
+                    if(!l.k && !l.v){
+                        //white line
+                    }else if(!l.k || !l.v){
+                        errorModal.msg='格式检查发现错误，请修改正确后再保存。';
+                        errorModal.show=true;
+                        return;
+                    }else if(hasChinese(l.k) || hasChinese(l.v)){
+                        errorModal.msg='ANTX目前不支持中文内容，请修改正确后再保存。';
+                        errorModal.show=true;
+                        return;
+                    }else{
+                        content_list.push(l)
+                    }
+                });
+                this.$http.post("{{url_for('antxProfile.project_antx')}}", {'project_id': this.project_id, 'env': 'aut', 'app_id': this.app_id, 'content':content_list}).then(
+                function(response){
+                    if(response.data.result == 1){
+                        infoModal.msg='保存成功。';
+                        infoModal.show=true;
+                        this.show = false
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            }
+        },
+        watch: {
+            content: function(val){
+                editAntxModal.content_list = [];
+                val.split("\n").forEach(function(l){
+                    e = l.split("=")
+                    if(e.length>1){
+                        k = e.splice(0,1)[0].trim()
+                        v = e.join("=").trim()
+                        editAntxModal.content_list.push({'k':k,'v':v})
+                    }else if(e.length==1){
+                        editAntxModal.content_list.push({'k':e[0].trim(),'v':''})
+                    }else{
+                        editAntxModal.content_list.push({'k':'','v':''})
+                    }
+                });
+                $("#editAntxModalcontent").css('height',($("#editAntxModalcontent")[0].scrollHeight+2)+"px")
+            },
+            kv_edit: function(val){
+                if(this.kv_edit){
+                    this.width = 2000;
+                }else{
+                    this.width = 1200;
+                }
+            }
+        }
+    });
+
+    var editModal = new Vue({
+        el: '#editModal',
+        data: {
+            show: false,
+            width: 500,
+            app_name: '',
+            project_id: '',
+            jdk_version: '',
+            app_id: '',
+            branch: '',
+            branch_list: []
+        },
+        methods: {
+            close: function() {
+		        this.show=false;
+		    },
+		    load_branch: function(){
+                this.$http.get("/apprepo/"+this.app_id+"/list_branch").then(
+                function(response){
+                    if(response.data.result == 1){
+                        editModal.branch_list = response.data.data
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+		    commit: function(){
+		        this.branch = $('#branch_selected').val()
+		        this.show=false;
+                this.$http.post("{{url_for('autciProjectProfile.aut_ci_project')}}", {'project_id': this.project_id, 'branch_name': this.branch, 'jdk_version': this.jdk_version}).then(
+                function(response){
+                    if(response.data.result==1){
+                        infoModal.msg='保存成功';
+                        infoModal.show=true;
+                        project_list.load_project_list(data.now)
+                    }else{
+                        errorModal.msg=response.data.info;
+                        errorModal.show=true;
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+		    }
+        }
+    })
+
+    var confirmModal = new Vue({
+        el: '#confirmModal',
+        data: {
+            show: false,
+            msg: '',
+            action: '',
+            app_id: '',
+            project_id: '',
+        },
+        methods: {
+            close: function() {
+		        this.show=false;
+		    },
+		    commit: function() {
+		        this.show=false;
+		        if(this.action=='del'){
+		            this.$http.delete("{{url_for('autciProjectProfile.aut_ci_project')}}", {"body":{"project_id": this.project_id, "app_id": this.app_id}}).then(
+                    function(response){
+                        console.log(response.data)
+                        if(response.data.result==1){
+                            infoModal.msg='删除成功';
+                            infoModal.show=true;
+                            project_list.load_project_list(data.now)
+                        }else{
+                            errorModal.msg='删除失败';
+                            errorModal.show=true;
+                        }
+                    },function(res){
+                        console.log(res);
+                        errorModal.msg='网络连接异常，请稍后重试。';
+                        errorModal.show=true;
+                    })
+		        }else if(this.action=='build'){
+		            this.$http.post("{{url_for('autciProjectProfile.aut_ci_project_build')}}", {"project_id": this.project_id}).then(
+                    function(response){
+                        console.log(response.data)
+                        if(response.data.result==1){
+                            infoModal.msg='开始构建成功';
+                            infoModal.show=true;
+                            project_list.load_project_list(data.now)
+                        }else{
+                            errorModal.msg='开始构建失败';
+                            errorModal.show=true;
+                        }
+                    },function(res){
+                        console.log(res);
+                        errorModal.msg='网络连接异常，请稍后重试。';
+                        errorModal.show=true;
+                    })
+		        }
+		    }
+        }
+    })
+
+    data = {
+        user_show: user_show,
+        orderby: 'name',
+        orderdesc: false,
+        total: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1,
+        ci_project_list: [],
+        query: '',
+        app_id_list: []
+    };
+    var project_list = new Vue({
+        el: '#project_list',
+        data: data,
+        methods:{
+            go_detail:function (ci_project_id) {
+                window.open("/ci-project/detail/" + ci_project_id, target="_blank");
+            },
+            first: function(event){
+                this.load_project_list(1);
+            },
+            go: function(event){
+                this.load_project_list(event.target.innerHTML);
+            },
+            last: function(event){
+                this.load_project_list(data.totalPage);
+            },
+            filter: function(event){
+                this.now = 1
+                this.load_project_list(this.now);
+            },
+            view_antx: function(app_id, project_id, app_name){
+                showAntxModal.load(app_id, project_id)
+                showAntxModal.app_name = app_name
+                showAntxModal.env = 'aut'
+                showAntxModal.show = true
+            },
+            edit_antx: function(app_id, project_id){
+                editAntxModal.load(app_id, project_id)
+                editAntxModal.show = true
+            },
+            load_project_list:function (p) {
+                this.now = p;
+                this.$http.get("{{url_for('autciProjectProfile.aut_ci_project')}}",{params: {"query": this.query, "p": p, "r": Math.random()}}).then(
+                function (response) {
+                    if(response.data.result == 1){
+                        data.ci_project_list = []
+                        data.ci_project_list = response.data.data.autciProjectList;
+                        for(i=0; i<data.ci_project_list.length; i++){
+                            data.ci_project_list[i].project_id = data.ci_project_list[i]._id.$oid;
+                            if(data.ci_project_list[i].last_build_time){
+                                data.ci_project_list[i].last_build_time = formatDate(data.ci_project_list[i].last_build_time["$date"])
+                            }
+                        }
+                        this.total = response.data.data.total;
+                        paging(response.data.data.prevNum, response.data.data.nextNum, response.data.data.total, response.data.data.perPage)
+                    }
+                },function () {
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            build: function(app_id, project_id){
+                confirmModal.msg="确认要开始构建这个项目吗?"
+                confirmModal.app_id=app_id;
+                confirmModal.project_id=project_id;
+                confirmModal.action='build'
+                confirmModal.show=true;
+            },
+            del: function(app_id, project_id){
+                confirmModal.msg="确认要删除这个持续集成项目吗?"
+                confirmModal.app_id=app_id;
+                confirmModal.project_id=project_id;
+                confirmModal.action='del'
+                confirmModal.show=true;
+            },
+            go_record: function(project_id){
+                flow_id = "ci-"+project_id;
+                window.open("{{url_for('ciProjectProfile.ci_project_build_record')}}?flow_id="+flow_id, '_blank')
+            },
+            edit: function(project_id, app_name, app_id, branch, jdk_version){
+                editModal.project_id=project_id
+                editModal.app_name=app_name
+                editModal.app_id=app_id
+                editModal.branch=branch
+                editModal.jdk_version=jdk_version
+                editModal.show=true;
+                editModal.load_branch();
+                setTimeout("$('#branch_selected').selected({btnWidth: '100%',searchBox: 1, maxHeight: '300px', dropUp: 1});",500);
+            }
+        }
+    });
+
+    $(document).ready(function() {
+        project_list.load_project_list(data.now);
+    });
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.totalPage = totalPage
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+</script>
+{% endblock %}

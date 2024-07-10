@@ -1,0 +1,93 @@
+<div class="am-panel am-panel-default">
+    <div class="am-panel-bd">
+        <div class="am-g am-form" style="margin-bottom:10px;">
+            <div class="am-input-group input-group am-u-md-3 am-u-sm-3" id="owner_begin_date">
+                <span class="am-input-group-label">开始时间</span>
+                <input class="am-form-field" v-model="begin_date">
+                <span class="am-input-group-label datepickerbutton">
+                    <i class="icon-th am-icon-calendar"></i>
+                </span>
+            </div>
+            <div class="am-input-group input-group am-u-md-3 am-u-sm-3" id="owner_end_date">
+                <span class="am-input-group-label">结束时间</span>
+                <input class="am-form-field" v-model="end_date">
+                <span class="am-input-group-label datepickerbutton">
+                    <i class="icon-th am-icon-calendar"></i>
+                </span>
+            </div>
+            <div class="am-input-group am-u-md-2 am-u-sm-2">
+                <span class="am-input-group-label">人员</span>
+                <select id="owner" v-model="selected_owner" style="width:200px">
+                    <option v-if="owner_list.length==0" value="">加载中</option>
+                    <option v-if="owner_list.length" value="">请选择人员</option>
+                    <option v-for="owner in owner_list" :value="owner.name">${owner.name}(${owner.real_name})</option>
+                </select>
+            </div>
+            <div class="am-u-md-1 am-u-sm-1 am-u-end">
+                <span class="am-input-group-btn">
+                    <button class="am-btn am-btn-sm am-btn-primary" type="button" @click="filter">查询</button>
+                </span>
+            </div>
+        </div>
+        <table class="am-table am-table-bordered am-table-striped am-table-compact" style="font-size:small">
+            <thead>
+                <tr class="am-panel-hd" style="color:#c09853; height:20px">
+                    <th style="border:none;" width="20%">
+                        发布成功率&nbsp总发布数：${total}
+                    </th>
+                    <th colspan="4"></th>
+                    <th style="border:none;text-align:right">
+                        <a class="am-btn am-btn-xs am-btn-default" @click="export_data('owner_publish_records_by_product')"><span class="am-icon-file-excel-o"></span> 导出</a>
+                    </th>
+                </tr>
+                <tr class="am-btn-success">
+                        <th>部门</th>
+                        <th>产品模块</th>
+                        <th>发布总数</th>
+                        <th>成功数</th>
+                        <th>退回数</th>
+                        <th>发布成功率</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="line in product_publish_records">
+                    <td>${line.department}</td>
+                    <td>${line.product}</td>
+                    <td>${line.total}</td>
+                    <td>${line.complete}</td>
+                    <td>${line.abandon}</td>
+                    <td>${line.success_str}</td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="am-table am-table-bordered am-table-striped am-table-compact" style="font-size:small">
+            <thead>
+                <tr class="am-panel-hd" style="color:#c09853; height:20px">
+                    <th style="border:none;" width="20%">
+                        项目负责人发布成功率
+                    </th>
+                    <th colspan="3"></th>
+                    <th style="border:none;text-align:right">
+                        <a class="am-btn am-btn-xs am-btn-default" @click="export_data('owner_publish_records')"><span class="am-icon-file-excel-o"></span> 导出</a>
+                    </th>
+                </tr>
+                <tr class="am-btn-success">
+                        <th>开发人员</th>
+                        <th>发布总数</th>
+                        <th>成功数</th>
+                        <th>退回数</th>
+                        <th>发布成功率</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="line in owner_publish_records">
+                    <td>${line.owner}</td>
+                    <td>${line.total}</td>
+                    <td>${line.complete}</td>
+                    <td>${line.abandon}</td>
+                    <td>${line.success_str}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

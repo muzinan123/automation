@@ -1,0 +1,116 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n10" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="am-g" style="word-break:break-all;">
+    <div class="am-tabs" data-am-tabs="{noSwipe: 1}">
+        <ul class="am-tabs-nav am-nav am-nav-tabs">
+            <li class="am-active"><a href="#tab1">全部</a></li>
+            <li><a href="#tab2">按部门统计</a></li>
+            <li><a href="#tab3">按人员统计</a></li>
+        </ul>
+        <div class="am-tabs-bd">
+            <div class="am-tab-panel am-active" id="tab1" v-cloak>
+                {%include 'publish/statistics/all-statistics.html'%}
+            </div>
+            <div class="am-tab-panel" id="tab2" v-cloak>
+                {%include 'publish/statistics/department-statistics.html'%}
+            </div>
+            <div class="am-tab-panel" id="tab3" v-cloak>
+                {%include 'publish/statistics/owner-statistics.html'%}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block html %}
+{% endblock %}
+
+{% block css%}
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.datetimepicker-se.min.css') }}" >
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/moment.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='assets/js/amazeui.datetimepicker-se.min.js') }}" ></script>
+<script language="JavaScript">
+{%include 'publish/statistics/js/all.js'%}
+{%include 'publish/statistics/js/department_statistics.js'%}
+{%include 'publish/statistics/js/owner_statistics.js'%}
+
+$(document).ready(function() {
+    console.log('getting ready...')
+    $('#begin_date').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+    $('#end_date').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+    $('#begin_date').on('dp.change', function(e) {
+        $('#end_date').data('DateTimePicker').minDate(e.date);
+    });
+    $('#dept_begin_date').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+    $('#dept_end_date').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+    $('#dept_begin_date').on('dp.change', function(e) {
+        $('#dept_end_date').data('DateTimePicker').minDate(e.date);
+    });
+    $('#owner_begin_date').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+    $('#owner_end_date').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+    $('#owner_begin_date').on('dp.change', function(e) {
+        $('#owner_end_date').data('DateTimePicker').minDate(e.date);
+        if($('#owner_begin_date input').val() && $('#owner_end_date input').val()){
+            owner_data.begin_date = $('#owner_begin_date input').val()
+            owner_data.end_date = $('#owner_end_date input').val()
+            owner_data.load_users()
+        }
+    });
+    $('#owner_end_date').on('dp.change', function(e) {
+        if($('#owner_begin_date input').val() && $('#owner_end_date input').val()){
+            owner_data.begin_date = $('#owner_begin_date input').val()
+            owner_data.end_date = $('#owner_end_date input').val()
+            owner_data.load_users()
+        }
+    });
+    setDate()
+    all.load_publish_records_by_production()
+    all.load_abandon_records()
+    all.load_abandon_records_top_10()
+    dept_data.load_app_department()
+    owner_data.load_users()
+});
+
+function setDate(){
+    var now = new Date()
+    var now_date_str = formatDate(now).split(' ')[0]
+    var yesterday_date = now.setDate(now.getDate()-1)
+    var yesterday_month = (now.getMonth()+1).toString()
+    yesterday_date = now.getDate().toString()
+    yesterday_month = yesterday_month.length==1?"0"+yesterday_month:yesterday_month
+    yesterday_date = yesterday_date.length==1?"0"+yesterday_date:yesterday_date
+    var yesterday_date_str = now.getFullYear() + '-' + yesterday_month + '-' + yesterday_date
+    all.begin_date = yesterday_date_str
+    all.end_date = now_date_str
+    dept_data.begin_date = yesterday_date_str
+    dept_data.end_date = now_date_str
+    owner_data.begin_date = yesterday_date_str
+    owner_data.end_date = now_date_str
+}
+</script>
+{% endblock %}

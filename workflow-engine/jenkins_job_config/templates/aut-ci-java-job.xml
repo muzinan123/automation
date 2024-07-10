@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.17">
+    <actions>
+        <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobAction plugin="pipeline-model-definition@1.2.7"/>
+        <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction plugin="pipeline-model-definition@1.2.7">
+            <jobProperties/>
+            <triggers/>
+            <parameters/>
+        </org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction>
+    </actions>
+    <description>{{description}}</description>
+    <keepDependencies>false</keepDependencies>
+    <properties>
+        <com.synopsys.arc.jenkinsci.plugins.jobrestrictions.jobs.JobRestrictionProperty plugin="job-restrictions@0.6"/>
+    </properties>
+    <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.44">
+        <script>node('Duang'){
+        stage('Cleanup') {
+        cleanWs()
+        }
+        stage('Env') {
+        env.NAME="{{app}}"
+        env.ANTX_NAME="${env.NAME}.properties"
+        env.POM_PATH="$WORKSPACE/$env.NAME"
+        env.ANTX_PATH="$WORKSPACE/antx"
+        env.MAIN_PATH="$WORKSPACE/main"
+		env.TARGET_PATH="$WORKSPACE/$env.NAME/target"
+		env.PACKAGE_PATH="/alidata1/admin/package/release/app/{{app_id}}/{{env}}"
+        env.JAVA_HOME="${tool '{{jdk_version}}'}"
+        env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
+        sh 'java -version'
+        }
+        stage('Checkout') {
+        {%if vcs_type=='git'%}
+        dir("$env.POM_PATH"){
+            checkout([$class: 'GitSCM',
+                branches: [[name: '{{branch_name}}']],
+                doGenerateSubmoduleConfigurations: false,
+                extensions: [[$class: 'CleanCheckout']],
+                userRemoteConfigs: [[credentialsId: '{{credentials_id}}',
+                url: '{{vcs_path}}.git']]
+            ])
+        }
+        {%elif vcs_type=='svn'%}
+        sh "svn co {{vcs_path}}/{{branch_name}} $env.NAME"
+        {%endif%}
+        }
+        stage('Build') {
+        sh "mkdir $env.ANTX_PATH"
+        sh "wget --header 'api: {{api_token}}' -P $env.ANTX_PATH {{antx_download_url}}/$env.ANTX_NAME"
+		dir ("$env.POM_PATH") {
+		    sh "{{build_cmd}}"
+        }
+        {% if app_type in ['app']%}
+        sh "cd $env.TARGET_PATH &amp;&amp; FN=\$(ls *.[wj]ar|grep -Ev '1.0.0|sources|original') &amp;&amp; /alidata1/app/autoconfig -u $env.ANTX_PATH/$env.ANTX_NAME -I $env.TARGET_PATH/\${FN} > $env.ANTX_PATH/antx.log 2>&amp;1"
+        sh "cd $env.ANTX_PATH &amp;&amp; cat antx.log &amp;&amp; FT=\$(cat antx.log|egrep -i 'ERROR'|wc -l) &amp;&amp; if [ \${FT} -ne '0' ];then cd $env.POM_PATH &amp;&amp; mvn -B -U -N -Dautoconfig.userProperties=$env.ANTX_PATH/$env.ANTX_NAME com.zhongan.plugins:za-maven-plugin:0.53:autoConfigCheck -Dautoconfig.skip -Dmaven.test.skip=true &amp;&amp; exit 1;fi"
+        {% endif %}
+        }
+        {% if app_type in ['app'] %}stage('Push') {
+		sh "cd $env.TARGET_PATH &amp;&amp; FN=\$(ls *.[wj]ar|grep -Ev '1.0.0|sources|original') &amp;&amp; md5sum \${FN} > \${FN}.md5 &amp;&amp; echo \${FN} > name.txt"
+        sh "ssh -o StrictHostKeychecking=no admin@{{package_server}} \"[ -d $env.PACKAGE_PATH/head ] &amp;&amp; readlink $env.PACKAGE_PATH/head | xargs -i ln -nsf {} $env.PACKAGE_PATH/last || echo 'No Head'\""
+        sh "ssh -o StrictHostKeychecking=no admin@{{package_server}} \"[ -d $env.PACKAGE_PATH/{{publish_id}} ] &amp;&amp; echo 'Already Exist' || mkdir -p $env.PACKAGE_PATH/{{publish_id}}\""
+        sh "ssh -o StrictHostKeychecking=no admin@{{package_server}} \"ln -nsf $env.PACKAGE_PATH/{{publish_id}} $env.PACKAGE_PATH/head\""
+        sh "find $env.TARGET_PATH -maxdepth 1 -type f | xargs -i scp -o StrictHostKeychecking=no {} admin@{{package_server}}:$env.PACKAGE_PATH/{{publish_id}}"
+        }{% endif %}
+}</script>
+        <sandbox>true</sandbox>
+    </definition>
+    <triggers/>
+    <disabled>false</disabled>
+</flow-definition>

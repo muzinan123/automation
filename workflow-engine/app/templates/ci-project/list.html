@@ -1,0 +1,365 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n0" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">持续集成</strong> / <small>项目列表</small></div>
+        </div>
+        <div class="am-g" id="project_list" v-cloak>
+            <div class="am-u-sm-12 am-u-md-12" style="overflow:auto;">
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="query" type="text" class="am-form-field" placeholder="应用名称、分支、版本查询" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-1 am-u-sm-2">
+                    <a class="am-btn am-btn-success" href="{{url_for('ciProjectProfile.ci_project_create')}}" target="_blank">新增项目</a>
+                </div>
+
+                <div class="am-input-group">
+                    <b style="color:red;">应用联系人或负责人才有相关项目的操作权限, 前往<a href="https://westworld.zhonganonline.com/form/appcontact/create" target="_blank">申请权限</a></b>
+                </div>
+
+                <table class="am-table" >
+                    <thead>
+                    <tr>
+                        <th class="table-title">所属</th>
+                        <th class="table-title">应用名称</th>
+                        <th class="table-title">分支</th>
+                        <th class="table-title">版本</th>
+                        <th class="table-title">构建次数</th>
+                        <th class="table-title">最后一次构建时间</th>
+                        <th class="table-title">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in ci_project_list">
+                            <td>${line.company.name}-${line.department.name}-${line.production.name}</td>
+                            <td>${line.app_name}</td>
+                            <td>${line.branch}</td>
+                            <td>${line.version}</td>
+                            <td>
+                                <a href="#" @click="go_record(line.app_id, line.branch)" class="am-btn am-btn-sm am-btn-primary am-round" title="查看构建记录">
+                                    ${line.build_count}&nbsp;
+                                    <i class="am-icon-list"></i>
+                                </a>
+                            </td>
+                            <td>${line.last_build_time}</td>
+                            <td>
+                                <div v-if="app_id_list.indexOf(line.app_id)>=0 || user_show.pe>0">
+                                    <a v-if="line.status=='ready'" href="#" class="am-icon-btn am-icon-play am-icon-btn-sm am-success" @click="build(line.app_id, line.branch)" title="开始构建"></a>
+                                    <a v-if="line.status!='ready'" class="am-icon-btn am-icon-gear am-icon-spin am-icon-btn-sm am-success" title="正在构建"></a>
+                                    <a v-if="line.status=='ready'" href="#" class="am-icon-btn am-icon-edit am-icon-btn-sm am-primary" @click="edit(line.app_id, line.app_name, line.branch, line.jdk_version)" title="编辑"></a>
+                                    <a v-if="line.status=='ready'" href="#" class="am-icon-btn am-icon-remove am-icon-btn-sm am-danger" @click="del(line.app_id, line.branch)" title="删除"></a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="first">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="last">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block html %}
+    <div id="confirmModal">
+        <modal :show="show" v-on:close="close">
+            <span slot="header">确认</span>
+            <span slot="body">${msg}</span>
+            <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+            <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+        </modal>
+    </div>
+
+    <div id="editModal">
+        <modal :show="show" :width="width" v-on:close="close">
+            <span slot="header">编辑</span>
+            <div slot="body">
+                <div class="am-form">
+                    <div class="am-form-group">
+                        <label class="am-fl">应用名称</label>
+                        <input type="text" :value="app_name" disabled="disabled"/>
+                    </div>
+                    <div class="am-form-group">
+                        <label class="am-fl">分支<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></label>
+                        <select id="branch_selected">
+                            <option value="">请选择</option>
+                            <option v-for="one in branch_list" :value="one">${one}</option>
+                        </select>
+                    </div>
+                    <div class="am-form-group" style="text-align:left;">
+                        <label>JDK版本<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></label>
+                        <div>
+                            <label class="am-radio-inline">
+                                <input type="radio"  value="1.7" v-model="jdk_version"> 1.7
+                            </label>
+                            <label class="am-radio-inline">
+                                <input type="radio" value="1.8" v-model="jdk_version"> 1.8
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+            <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+        </modal>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/md5.min.js') }}"></script>
+<script language="JavaScript">
+    var editModal = new Vue({
+        el: '#editModal',
+        data: {
+            show: false,
+            width: 500,
+            app_name: '',
+            app_id: 0,
+            branch_list: [],
+            branch_name: '',
+            new_branch_name: '',
+            jdk_version: ''
+        },
+        methods: {
+            close: function() {
+		        this.show=false;
+		    },
+		    commit: function(){
+		        this.show=false;
+                this.new_branch_name=$("#branch_selected").val()
+                new_branch_name = null;
+                if(this.new_branch_name!=this.branch_name){
+                    new_branch_name = this.new_branch_name
+                }
+                this.$http.post("{{url_for('ciProjectProfile.ci_project')}}", {'app_id': this.app_id, 'branch_name': this.branch_name, 'jdk_version': this.jdk_version, 'new_branch_name': new_branch_name}).then(
+                function(response){
+                    if(response.data.result==1){
+                        infoModal.msg='保存成功';
+                        infoModal.show=true;
+                        project_list.load_project_list(data.now)
+                    }else{
+                        errorModal.msg=response.data.info;
+                        errorModal.show=true;
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+		    },
+		    load_branch: function(){
+                this.$http.get("/apprepo/"+this.app_id+"/list_branch").then(
+                function(response){
+                    if(response.data.result == 1){
+                        this.branch_list = response.data.data
+                        $('#branch_selected').selected({
+                            btnWidth: '100%',
+                            searchBox: 1,
+                            maxHeight: '200px',
+                            dropUp: 1
+                        });
+                        setTimeout('$("#branch_selected").val(editModal.new_branch_name);$("#branch_selected").trigger("changed.selected.amui");',500);
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            }
+        }
+    })
+
+    var confirmModal = new Vue({
+        el: '#confirmModal',
+        data: {
+            show: false,
+            msg: '',
+            action: '',
+            app_id: 0,
+            branch_name: '',
+        },
+        methods: {
+            close: function() {
+		        this.show=false;
+		    },
+		    commit: function() {
+		        this.show=false;
+		        if(this.action=='del'){
+		            this.$http.delete("{{url_for('ciProjectProfile.ci_project')}}", {body:{"app_id": this.app_id, 'branch_name': this.branch_name}}).then(
+                    function(response){
+                        console.log(response.data)
+                        if(response.data.result==1){
+                            infoModal.msg='删除成功';
+                            infoModal.show=true;
+                            project_list.load_project_list(data.now)
+                        }else{
+                            errorModal.msg='删除失败';
+                            errorModal.show=true;
+                        }
+                    },function(res){
+                        console.log(res);
+                        errorModal.msg='网络连接异常，请稍后重试。';
+                        errorModal.show=true;
+                    })
+		        }else if(this.action=='build'){
+		            this.$http.post("{{url_for('ciProjectProfile.ci_project_build')}}", {"app_id": this.app_id, 'branch_name': this.branch_name}).then(
+                    function(response){
+                        console.log(response.data)
+                        if(response.data.result==1){
+                            infoModal.msg='开始构建成功';
+                            infoModal.show=true;
+                            project_list.load_project_list(data.now)
+                        }else{
+                            errorModal.msg='开始构建失败';
+                            errorModal.show=true;
+                        }
+                    },function(res){
+                        console.log(res);
+                        errorModal.msg='网络连接异常，请稍后重试。';
+                        errorModal.show=true;
+                    })
+		        }
+		    }
+        }
+    })
+
+    data = {
+        user_show: user_show,
+        orderby: 'name',
+        orderdesc: false,
+        total: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1,
+        ci_project_list: [],
+        query: '',
+        app_id_list: []
+    };
+    var project_list = new Vue({
+        el: '#project_list',
+        data: data,
+        methods:{
+            go_detail:function (ci_project_id) {
+                window.open("/ci-project/detail/" + ci_project_id, target="_blank");
+            },
+            first: function(event){
+                this.load_project_list(1);
+            },
+            go: function(event){
+                this.load_project_list(event.target.innerHTML);
+            },
+            last: function(event){
+                this.load_project_list(data.totalPage);
+            },
+            filter: function(event){
+                this.now = 1
+                this.load_project_list(this.now);
+            },
+            sort: function(orderby){
+
+            },
+            load_participant_app_id:function(){
+                this.$http.get("{{url_for('ciProjectProfile.participant_app_id')}}").then(
+                function (response) {
+                    if(response.data.result == 1){
+                        this.app_id_list = response.data.data;
+                    }
+                },function () {
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            load_project_list:function (p) {
+                this.now = p;
+                this.$http.get("{{url_for('ciProjectProfile.ci_project')}}",{params: {"query": this.query, "p": p, "r": Math.random()}}).then(
+                function (response) {
+                    if(response.data.result == 1){
+                        this.ci_project_list = response.data.data.ciProjectList;
+                        for(i=0; i<data.ci_project_list.length; i++){
+                            if(data.ci_project_list[i].last_build_time){
+                                data.ci_project_list[i].last_build_time = formatDate(data.ci_project_list[i].last_build_time["$date"])
+                            }
+                        }
+                        this.total = response.data.data.total;
+                        paging(response.data.data.prevNum, response.data.data.nextNum, response.data.data.total, response.data.data.perPage)
+                    }
+                },function () {
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            build: function(app_id, branch_name){
+                confirmModal.msg="确认要开始构建这个项目吗?"
+                confirmModal.app_id=app_id;
+                confirmModal.branch_name=branch_name;
+                confirmModal.action='build'
+                confirmModal.show=true;
+            },
+            del: function(app_id, branch_name){
+                confirmModal.msg="确认要删除这个持续集成项目吗?"
+                confirmModal.app_id=app_id;
+                confirmModal.branch_name=branch_name;
+                confirmModal.action='del'
+                confirmModal.show=true;
+            },
+            go_record: function(app_id, branch_name){
+                flow_id = "ci-"+md5(app_id+"-"+branch_name);
+                window.open("{{url_for('ciProjectProfile.ci_project_build_record')}}?flow_id="+flow_id, '_blank')
+            },
+            edit: function(app_id, app_name, branch_name, jdk_version){
+                editModal.app_id=app_id
+                editModal.app_name=app_name
+                editModal.branch_name=branch_name
+                editModal.new_branch_name=branch_name
+                editModal.jdk_version=jdk_version
+                editModal.show=true;
+                editModal.load_branch()
+            }
+        }
+    });
+
+    $(document).ready(function() {
+        project_list.load_participant_app_id();
+        project_list.load_project_list(data.now);
+    });
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.totalPage = totalPage
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+</script>
+{% endblock %}

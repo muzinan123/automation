@@ -1,0 +1,380 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n0" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="am-g" id="list">
+    <div class="am-panel am-panel-default">
+        <div class="am-panel-hd"><strong>设置提交发布时间</strong></div>
+        <table class="am-table am-table-bordered am-table-striped am-table-compact " style="font-size:small;">
+            <tr>
+                <td width="35%">预发环境自动打包发布开关</td>
+                <td><input id="auto_pre" type="checkbox" data-size="xs"></td>
+            </tr>
+            <tr>
+                <td>自动上预发环境开关</td>
+                <td><input id="auto_local" type="checkbox" data-size="xs"></td>
+            </tr>
+            <tr>
+                <td>禁止发布(封网)时间段(优先级1): <br>只允许紧急发布并且项目类型为系统故障和缺陷修复的项目发布</td>
+                <td>
+                    <div class="am-g">
+                        <div class="am-input-group input-group am-u-sm-6">
+                            <input type="text" class="am-form-field datetime" v-model="switch_info.no_publish_date.begin" id="no_publish_date_begin"/>
+                        </div>
+                        <div class="am-input-group input-group am-u-sm-6">
+                            <input type="text" class="am-form-field datetime" v-model="switch_info.no_publish_date.end" id="no_publish_date_end"/>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>允许发布时间(优先级2):</td>
+                <td>
+                    <div class="am-g">
+                        <div class="am-input-group input-group am-u-sm-6">
+                            <input type="text" class="am-form-field datetime" v-model="switch_info.publish_date.begin" id="publish_date_begin"/>
+                        </div>
+                        <div class="am-input-group input-group am-u-sm-6">
+                            <input type="text" class="am-form-field datetime" v-model="switch_info.publish_date.end" id="publish_date_end"/>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    每周允许发布时间段(优先级3)： <br>
+                    紧急发布不受影响 <br>
+                    指定部门进行设置，不选择则修改默认设置
+                    <div class="am-form">
+                        <select v-model="selected_company" id="company" style="width:45%;display:inline-block;">
+                            <option v-if="company_list.length>0" value="">请选择公司</option>
+                            <option v-if="company_list.length==0" value="">载入中</option>
+                            <option v-for="company in company_list" :value="company.value">${company.label}</option>
+                        </select>
+                        <select v-model="dept_code" id="department" style="width:45%;display:inline-block;">
+                            <option v-if="department_list.length>0" value="">请选择部门</option>
+                            <option v-if="department_list.length==0" value="">载入中</option>
+                            <option v-for="department in department_list" :value="department.code">${department.label}</option>
+                        </select>
+                    </div>
+                </td>
+                <td>
+                    <center style="font-size:large;">
+                        <b v-if="dept_code">${dept_code}</b>
+                        <b v-else>默认</b>
+                    </center>
+                    <table class="am-table am-table-bordered am-table-striped am-table-compact">
+                        <tr>
+                            <td width="15%">星期一</td>
+                            <td>
+                                 <div class="am-g">
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                        <input type="text" class="am-form-field time" id="mon_begin"/>
+                                    </div>
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                        <input type="text" class="am-form-field time" id="mon_end"/>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>星期二</td>
+                            <td>
+                                 <div class="am-g">
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                          <input type="text" class="am-form-field time" id="tue_begin"/>
+                                    </div>
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                          <input type="text" class="am-form-field time" id="tue_end"/>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                         <tr>
+                            <td>星期三</td>
+                            <td>
+                                 <div class="am-g">
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                         <input type="text" class="am-form-field time" id="wed_begin"/>
+                                    </div>
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                        <input type="text" class="am-form-field time" id="wed_end"/>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                         <tr>
+                            <td>星期四</td>
+                            <td>
+                                 <div class="am-g">
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                        <input type="text" class="am-form-field time" id="thu_begin"/>
+                                    </div>
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                        <input type="text" class="am-form-field time" id="thu_end"/>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                         <tr>
+                            <td>星期五</td>
+                            <td>
+                                 <div class="am-g">
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                        <input type="text" class="am-form-field time" id="fri_begin"/>
+                                    </div>
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                        <input type="text" class="am-form-field time" id="fri_end"/>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                         <tr>
+                            <td>星期六</td>
+                            <td>
+                                 <div class="am-g">
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                        <input type="text" class="am-form-field time" id="sat_begin"/>
+                                    </div>
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                        <input type="text" class="am-form-field time" id="sat_end"/>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                         <tr>
+                            <td>星期日</td>
+                            <td>
+                                 <div class="am-g">
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                          <input type="text" class="am-form-field time" id="sun_begin"/>
+                                    </div>
+                                    <div class="am-input-group input-group am-u-sm-6">
+                                          <input type="text" class="am-form-field time" id="sun_end"/>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><button type="button" class="am-btn am-btn-success am-round" @click="commit">点我更新</button></td>
+            </tr>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block html %}
+<div id="confirmModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">确认</span>
+        <span slot="body">${msg}</span>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+{% endblock %}
+
+{% block css%}
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.datetimepicker-se.min.css') }}" >
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.switch.css') }}" >
+{% endblock %}
+
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/moment.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='assets/js/amazeui.datetimepicker-se.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='assets/js/amazeui.switch.min.js') }}" ></script>
+<script language="JavaScript">
+
+    $(document).ready(function() {
+        list.load();
+        list.load_company();
+    });
+    var confirmModal = new Vue({
+        el: '#confirmModal',
+        data: {
+            show: false,
+            width: 300,
+            msg: ''
+            },
+        methods: {
+            close: function() {
+                this.show=false;
+            },
+            commit: function() {
+                this.show = false
+                list.save()
+            }
+        }
+    });
+
+    var list = new Vue({
+        el: '#list',
+        data: {
+            selected_company: '',
+            dept_code: '',
+            switch_info: {
+                no_publish_date: {},
+                publish_date: {},
+            },
+            company_list: [],
+            department_list: []
+        },
+        methods: {
+            load: function(){
+                this.$http.get("{{url_for('publishProfile.publish_switch_info')}}").then(
+                function(response){
+                    console.log(response.data.data)
+                    list.switch_info = {}
+                    list.switch_info = response.data.data
+
+                    $('#auto_local').bootstrapSwitch("state", list.switch_info.auto_local);
+                    $('#auto_pre').bootstrapSwitch("state", list.switch_info.auto_pre);
+
+                    $('input.datetime').datetimepicker({
+                        format: 'YYYY-MM-DD HH:mm'
+                    });
+
+                    $('input.time').datetimepicker({
+                        format: 'HH:mm'
+                    });
+                    list.resolve();
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            resolve: function(){
+                dept_code = this.dept_code
+                if(!dept_code){
+                    dept_code = 'default'
+                }
+                dept_date = this.switch_info.weekly_publish_date[dept_code]
+                if(!dept_date){
+                    dept_date = this.switch_info.weekly_publish_date['default']
+                }
+                $("#mon_begin").val(dept_date.Mon.begin);
+                $("#mon_end").val(dept_date.Mon.end);
+                $("#tue_begin").val(dept_date.Tue.begin);
+                $("#tue_end").val(dept_date.Tue.end);
+                $("#wed_begin").val(dept_date.Wed.begin);
+                $("#wed_end").val(dept_date.Wed.end);
+                $("#thu_begin").val(dept_date.Thu.begin);
+                $("#thu_end").val(dept_date.Thu.end);
+                $("#fri_begin").val(dept_date.Fri.begin);
+                $("#fri_end").val(dept_date.Fri.end);
+                $("#sat_begin").val(dept_date.Sat.begin);
+                $("#sat_end").val(dept_date.Sat.end);
+                $("#sun_begin").val(dept_date.Sun.begin);
+                $("#sun_end").val(dept_date.Sun.end);
+            },
+            commit: function(){
+                confirmModal.show = true
+                confirmModal.msg = '确认保存修改吗？'
+            },
+            save: function(){
+
+                list.switch_info.auto_local = $('#auto_local').bootstrapSwitch("state");
+                list.switch_info.auto_pre = $('#auto_pre').bootstrapSwitch("state");
+                list.switch_info.no_publish_date = {"begin": $("#no_publish_date_begin").val(), "end": $("#no_publish_date_end").val()}
+                list.switch_info.publish_date = {"begin": $("#publish_date_begin").val(), "end": $("#publish_date_end").val()}
+
+                dept_code = this.dept_code
+                if(!dept_code){
+                    dept_code = 'default'
+                }
+                console.log(dept_code)
+                list.switch_info.weekly_publish_date[dept_code] = {
+                    Mon:{
+                        begin: $("#mon_begin").val(),
+                        end: $("#mon_end").val()
+                    },
+                    Tue: {
+                        begin: $("#tue_begin").val(),
+                        end: $("#tue_end").val()
+                    },
+                    Wed: {
+                        begin: $("#wed_begin").val(),
+                        end: $("#wed_end").val()
+                    },
+                    Thu: {
+                        begin: $("#thu_begin").val(),
+                        end: $("#thu_end").val()
+                    },
+                    Fri: {
+                        begin: $("#fri_begin").val(),
+                        end: $("#fri_end").val()
+                    },
+                    Sat: {
+                        begin: $("#sat_begin").val(),
+                        end: $("#sat_end").val()
+                    },
+                    Sun: {
+                        begin: $("#sun_begin").val(),
+                        end: $("#sun_end").val()
+                    }
+                }
+
+                this.$http.post("{{url_for('publishProfile.save_switch_info')}}", list.switch_info).then(
+                function(response){
+                    if(response.data.result == 1){
+                        infoModal.msg = '更新成功'
+                        infoModal.show = true
+                    }else{
+                        infoModal.msg = '更新失败'
+                        infoModal.show = true
+                    }
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            load_company: function() {
+                this.$http.get("https://apprepo.zhonganonline.com/api/app/company/list", {params: {"r":Math.random()}, emulateJSON: true}).then(
+                function(response){
+                    if(response.data.result == 1){
+                        this.company_list = [];
+                        this.company_list = response.data.data.companyList;
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            load_department: function() {
+                this.$http.get("https://apprepo.zhonganonline.com/api/app/department/list", {params: {"company_id":this.selected_company, "r":Math.random()}, emulateJSON: true}).then(
+                function(response){
+                    this.department_list = [];
+                    if(response.data.result == 1){
+                        this.department_list = response.data.data.departmentList;
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            }
+        },
+        watch: {
+            selected_company: function(val){
+                list.load_department();
+            },
+            dept_code: function(val){
+                list.resolve();
+            }
+        }
+    });
+</script>
+{% endblock %}

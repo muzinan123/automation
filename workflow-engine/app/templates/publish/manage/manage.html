@@ -1,0 +1,607 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n8" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/mermaid.forest.css') }}" />
+    <div class="admin-content-body">
+        <div v-cloak class="am-g" id="list">
+            <table class="am-table am-table-bordered am-table-striped am-table-compact" style="font-size:small">
+                <thead>
+                    <tr class="am-panel-hd" style="color:#c09853">
+                        <th style="border:none" colspan="8">
+                            <strong>生产环境</strong>
+                        </th>
+                    </tr>
+                    <tr class="am-btn-danger">
+                        <th>单号</th>
+                        <th>项目名称</th>
+                        <th>项目类型</th>
+                        <th>发布类型</th>
+                        <th>发布应用</th>
+                        <th>发布状态</th>
+                        <th>执行人</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="line in publish_list" v-if="line.publish.current_flow_info.env == 'prd' && !line.publish.scheduled_time">
+                        <td><a href="#" :title="line.publish_id" @click="go_publish(line.publish_id)" :name="line.publish_id">${line.publish_id}</a></td>
+                        <td width="15%">
+                            <a href="#" :title="line.project.id" @click="go_project(line.project.id)">${line.project.name}</a><br>
+                            Owner: ${line.project.owner.real_name}<br>
+                            BA: ${line.project.ba.real_name}
+                        </td>
+                        <td>
+                            <span>${line.project.type|get_project_type}<br></span>
+                            <span v-if="line.publish.sql_execute_config && line.publish.sql_status.prd != 'init'" :class="[line.publish.sql_active?active:normal]">有SQL脚本<br></span>
+                            <span v-if="line.publish.diamond_before || line.publish.diamond_after" :class="normal">有配置脚本<br></span>
+                            <span v-if="line.publish.dzbd" :class="normal">
+                                <span style="color:gray;" v-if="line.publish.dzbd.skip"><s>有电子保单</s></span>
+                                <span v-else>有电子保单</span>
+                                <span class="am-badge am-round" :class="{'am-badge-success':!line.publish.dzbd.skip}">${line.publish.dzbd.tag_revision}</span>
+                            </span>
+                        </td>
+                        <td>
+                            <span v-if="line.publish.publish_type=='urgent'">
+                                紧急发布<br>
+                                <a v-bind:href="'/publish/oa/download/'+ line.publish.oa_img">${line.publish.oa_id}</a>
+                            </span>
+                            <span v-else>常规发布</span>
+                        </td>
+                        <td>
+                            <div v-for="app_id in line.publish.share_order" style="margin-bottom:3px;margin-top:3px;">
+                                <span style="margin-right:3px;color:gray;" v-if="line.publish.app_info[app_id].skip"><s>${line.publish.app_info[app_id].name}</s></span>
+                                <span style="margin-right:3px;" v-else>${line.publish.app_info[app_id].name}</span>
+                                <span class="am-badge am-round" :class="{'am-badge-success':!line.publish.app_info[app_id].skip}">${line.publish.app_info[app_id].tag_revision}</span>
+                                <span v-if="line.publish.app_info[app_id].first_time" class="am-badge am-badge-danger am-round">new</span>
+                            </div>
+                            <div v-for="app_id in line.publish.app_order" style="margin-bottom:3px;margin-top:3px;">
+                                <span style="margin-right:3px;color:gray;" v-if="line.publish.app_info[app_id].skip"><s>${line.publish.app_info[app_id].name}</s></span>
+                                <span style="margin-right:3px;" v-else>${line.publish.app_info[app_id].name}</span>
+                                <span class="am-badge am-round" :class="{'am-badge-success':!line.publish.app_info[app_id].skip}">${line.publish.app_info[app_id].tag_revision}</span>
+                                <span v-if="line.publish.app_info[app_id].first_time" class="am-badge am-badge-danger am-round">new</span>
+                                <span v-if="line.publish.app_info[app_id].prd_has_slb" class="am-badge am-badge-primary am-round">SLB</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span v-if="line.publish.participants.length>0">${line.publish.current_flow_info.name}</span>
+                            <div class="am-progress am-progress-striped am-active" v-else>
+                                <div class="am-progress-bar am-progress-bar-secondary" style="width: 100%">${line.publish.current_flow_info.name}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div v-for="one in line.publish.participants" v-if="one.privilege_name!='pe' && one.privilege_name!='dba'">${one.user_real_name}(${one.privilege_name})</div>
+                            <div v-if="line.publish.pe_participanted_in" class="am-badge">PE</div>
+                            <div v-if="line.publish.dba_participanted_in" class="am-badge">DBA</div>
+                        </td>
+                        <td>
+                            <div v-if="line.publish.current_flow_info.directions">
+                                <a class="am-btn am-btn-secondary am-btn-xs" v-for="dv, dk in line.publish.current_flow_info.directions" href="#" @click="action(line, dk, dv)" style="margin-left:2px;margin-right:2px;">${dv.name}</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <thead>
+                    <tr class="am-panel-hd" style="color:#c09853">
+                        <th style="border:none" colspan="8">
+                            <strong>生产环境定时发布区</strong>
+                        </th>
+                    </tr>
+                    <tr class="am-btn-danger">
+                        <th>单号</th>
+                        <th>项目名称</th>
+                        <th>项目类型</th>
+                        <th>发布类型</th>
+                        <th>发布应用</th>
+                        <th>发布状态</th>
+                        <th>执行人</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="line in publish_list" v-if="line.publish.current_flow_info.env == 'prd' && line.publish.scheduled_time">
+                        <td><a href="#" :title="line.publish_id" @click="go_publish(line.publish_id)" :name="line.publish_id">${line.publish_id}</a></td>
+                        <td width="15%">
+                            <a href="#" :title="line.project.id" @click="go_project(line.project.id)">${line.project.name}</a><br>
+                            Owner: ${line.project.owner.real_name}<br>
+                            BA: ${line.project.ba.real_name}
+                        </td>
+                        <td>
+                            <span>${line.project.type|get_project_type}<br></span>
+                            <span v-if="line.publish.sql_execute_config && line.publish.sql_status.prd != 'init'" :class="[line.publish.sql_active?active:normal]">有SQL脚本<br></span>
+                            <span v-if="line.publish.diamond_before || line.publish.diamond_after" :class="normal">有配置脚本<br></span>
+                            <span v-if="line.publish.dzbd" :class="normal">
+                                <span style="color:gray;" v-if="line.publish.dzbd.skip"><s>有电子保单</s></span>
+                                <span v-else>有电子保单</span>
+                                <span class="am-badge am-round" :class="{'am-badge-success':!line.publish.dzbd.skip}">${line.publish.dzbd.tag_revision}</span>
+                            </span>
+                        </td>
+                        <td>
+                            <span v-if="line.publish.publish_type=='urgent'">
+                                紧急发布<br>
+                                <a v-bind:href="'/publish/oa/download/'+ line.publish.oa_img">${line.publish.oa_id}</a>
+                            </span>
+                            <span v-else>常规发布</span>
+                            <br>
+                            <div class="am-badge am-badge-danger">定时发布时间:${line.publish.scheduled_time}</div>
+                        </td>
+                        <td>
+                            <div v-for="app_id in line.publish.share_order" style="margin-bottom:3px;margin-top:3px;">
+                                <span style="margin-right:3px;color:gray;" v-if="line.publish.app_info[app_id].skip"><s>${line.publish.app_info[app_id].name}</s></span>
+                                <span style="margin-right:3px;" v-else>${line.publish.app_info[app_id].name}</span>
+                                <span class="am-badge am-round" :class="{'am-badge-success':!line.publish.app_info[app_id].skip}">${line.publish.app_info[app_id].tag_revision}</span>
+                                <span v-if="line.publish.app_info[app_id].first_time" class="am-badge am-badge-danger am-round">new</span>
+                            </div>
+                            <div v-for="app_id in line.publish.app_order" style="margin-bottom:3px;margin-top:3px;">
+                                <span style="margin-right:3px;color:gray;" v-if="line.publish.app_info[app_id].skip"><s>${line.publish.app_info[app_id].name}</s></span>
+                                <span style="margin-right:3px;" v-else>${line.publish.app_info[app_id].name}</span>
+                                <span class="am-badge am-round" :class="{'am-badge-success':!line.publish.app_info[app_id].skip}">${line.publish.app_info[app_id].tag_revision}</span>
+                                <span v-if="line.publish.app_info[app_id].first_time" class="am-badge am-badge-danger am-round">new</span>
+                                <span v-if="line.publish.app_info[app_id].prd_has_slb" class="am-badge am-badge-primary am-round">SLB</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span v-if="line.publish.participants.length>0">${line.publish.current_flow_info.name}</span>
+                            <div class="am-progress am-progress-striped am-active" v-else>
+                                <div class="am-progress-bar am-progress-bar-secondary" style="width: 100%">${line.publish.current_flow_info.name}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div v-for="one in line.publish.participants" v-if="one.privilege_name!='pe' && one.privilege_name!='dba'">${one.user_real_name}(${one.privilege_name})</div>
+                            <div v-if="line.publish.pe_participanted_in" class="am-badge">PE</div>
+                            <div v-if="line.publish.dba_participanted_in" class="am-badge">DBA</div>
+                        </td>
+                        <td>
+                            <div v-if="line.publish.current_flow_info.directions">
+                                <a class="am-btn am-btn-secondary am-btn-xs" v-for="dv, dk in line.publish.current_flow_info.directions" href="#" @click="action(line, dk, dv)" style="margin-left:2px;margin-right:2px;">${dv.name}</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <thead>
+                    <tr class="am-panel-hd" style="color:#c09853;">
+                        <th style="border:none" colspan="8">
+                            <strong>预发环境</strong>
+                        </th>
+                    </tr>
+                    <tr class="am-btn-warning">
+                        <th>单号</th>
+                        <th>项目名称</th>
+                        <th>项目类型</th>
+                        <th>发布类型</th>
+                        <th>发布应用</th>
+                        <th>发布状态</th>
+                        <th>执行人</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="line in publish_list" v-if="line.publish.current_flow_info.env == 'pre'">
+                        <td><a href="#" :title="line.publish_id" @click="go_publish(line.publish_id)" :name="line.publish_id">${line.publish_id}</a></td>
+                        <td width="15%">
+                            <a href="#" :title="line.project.id" @click="go_project(line.project.id)">${line.project.name}</a><br>
+                            Owner: ${line.project.owner.real_name}<br>
+                            BA: ${line.project.ba.real_name}
+                        </td>
+                        <td>
+                            <span>${line.project.type|get_project_type}<br></span>
+                            <span v-if="line.publish.sql_execute_config && line.publish.sql_status.pre != 'init'" :class="[line.publish.sql_active?active:normal]">有SQL脚本<br></span>
+                            <span v-if="line.publish.diamond_before || line.publish.diamond_after" :class="normal">有配置脚本<br></span>
+                            <span v-if="line.publish.dzbd" :class="normal">有电子保单</span>
+                        </td>
+                        <td>
+                            <span v-if="line.publish.publish_type=='urgent'">
+                                紧急发布<br>
+                                <a v-bind:href="'/publish/oa/download/'+ line.publish.oa_img">${line.publish.oa_id}</a>
+                            </span>
+                            <span v-else>常规发布</span>
+                            <br>
+                            <div class="am-badge am-badge-danger" v-if="line.publish.scheduled_time">定时发布时间:${line.publish.scheduled_time}</div>
+                        </td>
+                        <td>
+                            <div v-for="app_id in line.publish.share_order" style="margin-bottom:3px;margin-top:3px;">
+                                <span style="margin-right:3px;">${line.publish.app_info[app_id].name}</span>
+                                <span v-if="line.publish.app_info[app_id].first_time" class="am-badge am-badge-danger am-round">new</span>
+                            </div>
+                            <div v-for="app_id in line.publish.app_order" style="margin-bottom:3px;margin-top:3px;">
+                                <span style="margin-right:3px;">${line.publish.app_info[app_id].name}</span>
+                                <span v-if="line.publish.app_info[app_id].first_time" class="am-badge am-badge-danger am-round">new</span>
+                                <span v-if="line.publish.app_info[app_id].prd_has_slb" class="am-badge am-badge-primary am-round">SLB</span>
+                                <span v-if="line.publish.app_info[app_id].fixed_pre_server.length > 0">
+                                    <br>
+                                    <span v-for="server in line.publish.app_info[app_id].fixed_pre_server">
+                                        (${server.ip}:${server.port})
+                                    </span>
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <span v-if="line.publish.participants.length>0">${line.publish.current_flow_info.name}</span>
+                            <div class="am-progress am-progress-striped am-active" v-else>
+                                <div class="am-progress-bar am-progress-bar-secondary" style="width: 100%">${line.publish.current_flow_info.name}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div v-for="one in line.publish.participants" v-if="one.privilege_name!='pe' && one.privilege_name!='dba'">${one.user_real_name}(${one.privilege_name})</div>
+                            <div v-if="line.publish.pe_participanted_in" class="am-badge">PE</div>
+                            <div v-if="line.publish.dba_participanted_in" class="am-badge">DBA</div>
+                        </td>
+                        <td>
+                             <div v-if="line.publish.current_flow_info.directions">
+                                <a class="am-btn am-btn-secondary am-btn-xs"  v-for="dv, dk in line.publish.current_flow_info.directions" href="#" @click="action(line, dk, dv)" style="margin-left:2px;margin-right:2px;">${dv.name}</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <thead>
+                    <tr class="am-panel-hd" style="color:#c09853">
+                        <th style="border:none" colspan="8">
+                            <strong>待预发环境</strong>
+                        </th>
+                    </tr>
+                    <tr class="am-btn-primary">
+                        <th>单号</th>
+                        <th>项目名称</th>
+                        <th>项目类型</th>
+                        <th>发布类型</th>
+                        <th>发布应用</th>
+                        <th>发布状态</th>
+                        <th>执行人</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                   <tr v-for="line in publish_list" v-if="line.publish.current_flow_info.env == 'local'">
+                        <td><a href="#" :title="line.publish_id" @click="go_publish(line.publish_id)" :name="line.publish_id">${line.publish_id}</a></td>
+                        <td width="15%">
+                            <a href="#" :title="line.project.id" @click="go_project(line.project.id)">${line.project.name}</a><br>
+                            Owner: ${line.project.owner.real_name}<br>
+                            BA: ${line.project.ba.real_name}
+                        </td>
+                        <td>
+                            <span>${line.project.type|get_project_type}<br></span>
+                            <span v-if="line.publish.diamond_before || line.publish.diamond_after" :class="normal">有配置脚本<br></span>
+                            <span v-if="line.publish.dzbd" :class="normal">有电子保单</span>
+                        </td>
+                        <td>
+                            <span v-if="line.publish.publish_type=='urgent'">
+                                紧急发布<br>
+                                <a v-bind:href="'/publish/oa/download/'+ line.publish.oa_img">${line.publish.oa_id}</a>
+                            </span>
+                            <span v-else>常规发布</span>
+                            <br>
+                            <div class="am-badge am-badge-danger" v-if="line.publish.scheduled_time">定时发布时间:${line.publish.scheduled_time}</div>
+                        </td>
+                        <td>
+                            <div v-for="app_id in line.publish.share_order" style="margin-bottom:3px;margin-top:3px;">
+                                <span style="margin-right:3px;">${line.publish.app_info[app_id].name}</span>
+                                <span v-if="line.publish.app_info[app_id].first_time" class="am-badge am-badge-danger am-round">new</span>
+                            </div>
+                            <div v-for="app_id in line.publish.app_order" style="margin-bottom:3px;margin-top:3px;">
+                                <span style="margin-right:3px;">${line.publish.app_info[app_id].name}</span>
+                                <span v-if="line.publish.app_info[app_id].first_time" class="am-badge am-badge-danger am-round">new</span>
+                                <span v-if="line.publish.app_info[app_id].prd_has_slb" class="am-badge am-badge-primary am-round">SLB</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span v-if="line.publish.participants.length>0">${line.publish.current_flow_info.name}</span>
+                            <div class="am-progress am-progress-striped am-active" v-else>
+                                <div class="am-progress-bar am-progress-bar-secondary" style="width: 100%">${line.publish.current_flow_info.name}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div v-for="one in line.publish.participants" v-if="one.privilege_name!='pe' && one.privilege_name!='dba'">${one.user_real_name}(${one.privilege_name})</div>
+                            <a href="#" title="" v-if="line.publish.pe_participanted_in" class="am-badge">PE</a>
+                            <a href="#" title="" v-if="line.publish.dba_participanted_in" class="am-badge">DBA</a>
+                        </td>
+                        <td>
+                            <div v-if="line.publish.current_flow_info.directions">
+                                <a class="am-btn am-btn-secondary am-btn-xs"  v-for="dv, dk in line.publish.current_flow_info.directions" href="#" @click="action(line, dk, dv)" style="margin-left:2px;margin-right:2px;">${dv.name}</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block html %}
+<div id="sortAppModal">
+    <modal :show="show" width="100px" v-on:close="close">
+        <span slot="header">应用排序</span>
+        <div slot="body">
+             <table v-if = "app_branch_list.length > 0 || share_branch_list.length > 0" class="am-table am-table-bordered am-table-striped am-table-compact">
+                 <thead v-if = "share_branch_list.length > 0" style="text-align:center;">
+                    <tr>
+                        <th colspan="3">Share</th>
+                    </tr>
+                    <tr>
+                        <th style="text-align:center;width:30%">应用</th>
+                        <th style="text-align:center;">排序</th>
+                        <th style="text-align:center;width:30%">操作</th>
+                    </tr>
+                 </thead>
+                 <tbody v-if = "share_branch_list.length > 0">
+                     <tr v-for="line, idx in share_branch_list">
+                         <td >${line.app_name}</td>
+                         <td>
+                             ${idx}
+                         </td>
+                         <td style="width:40px" v-if="share_branch_list.length >1">
+                             <span v-if="share_branch_list.indexOf(line)==0">
+                                 <a href="#" @click="sort(line.order,share_branch_list.indexOf(line),1,1)"><i class="am-icon-sort-desc" ></i></a>
+                             </span>
+                             <span v-else-if="share_branch_list.indexOf(line)==share_branch_list.length-1">
+                                 <a href="#" @click="sort(line.order,share_branch_list.indexOf(line),-1,1)"><i class="am-icon-sort-asc" ></i></a>
+                             </span>
+                             <span v-else>
+                                 <a href="#" @click="sort(line.order,share_branch_list.indexOf(line),1,1)"><i class="am-icon-sort-desc" ></i></a>
+                                 <a href="#" @click="sort(line.order,share_branch_list.indexOf(line),-1,1)"><i class="am-icon-sort-asc" ></i></a>
+                             </span>
+                         </td>
+                         <td v-else></td>
+                     </tr>
+                 </tbody>
+                 <thead v-if = "app_branch_list.length > 0">
+                    <tr>
+                        <th colspan="3">App</th>
+                    </tr>
+                    <tr>
+                        <th style="text-align:center;width:30%">应用</th>
+                        <th style="text-align:center;">排序</th>
+                        <th style="text-align:center;width:30%">操作</th>
+                    </tr>
+                 </thead>
+                 <tbody v-if = "app_branch_list.length > 0">
+                     <tr v-for="line, idx in app_branch_list">
+                         <td >${line.app_name}</td>
+                         <td>
+                             ${idx}
+                         </td>
+                         <td style="width:40px" v-if="app_branch_list.length >1">
+                             <span v-if="app_branch_list.indexOf(line)==0">
+                                 <a href="#" @click="sort(line.order,app_branch_list.indexOf(line),1,0)"><i class="am-icon-sort-desc" ></i></a>
+                             </span>
+                             <span v-else-if="app_branch_list.indexOf(line)==app_branch_list.length-1">
+                                 <a href="#" @click="sort(line.order,app_branch_list.indexOf(line),-1,0)"><i class="am-icon-sort-asc" ></i></a>
+                             </span>
+                             <span v-else>
+                                 <a href="#" @click="sort(line.order,app_branch_list.indexOf(line),1,0)"><i class="am-icon-sort-desc" ></i></a>
+                                 <a href="#" @click="sort(line.order,app_branch_list.indexOf(line),-1,0)"><i class="am-icon-sort-asc" ></i></a>
+                             </span>
+                         </td>
+                         <td v-else></td>
+                     </tr>
+                 </tbody>
+             </table>
+        </div>
+    </modal>
+</div>
+
+<div id="sortConfirmModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">确认</span>
+        <span slot="body">${msg}</span>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="actionConfirmModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">确认</span>
+        <span slot="body" v-html="msg"></span>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="rollbackModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">确认</span>
+        <div slot="body">
+            <div class="am-form">
+                <div class="am-form-group">
+                    <label class="am-fl">回退原因<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></label>
+                    <select v-model="reason">
+                        <option value="">请选择原因</option>
+                        <option value="exist_bug">存在Bug</option>
+                        <option value="publish_problem">发布问题</option>
+                        <option value="commit_problem">代码漏提交</option>
+                        <option value="code_conflict">代码冲突</option>
+                        <option value="code_stale">不是最新代码</option>
+                        <option value="other">其它</option>
+                    </select>
+                </div>
+                <div class="am-form-group">
+                    <label class="am-fl">回退责任人</label>
+                    <select v-model="bad_man">
+                        <option value="">请选择回退责任人</option>
+                        <option v-for="line in participant" :value="'['+line.privilege_name+']'+line.participant.real_name">${'['+line.privilege_name+']'+line.participant.real_name}</option>
+                    </select>
+                </div>
+                <div class="am-form-group">
+                    <label class="am-fl">回退原因</label>
+                    <textarea v-model="comment" placeholder="请填写回退原因"></textarea>
+                </div>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="prdBuildModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">确认</span>
+        <div slot="body">
+            <p style="text-align:left;color:red;" v-html="msg"></p>
+            <div v-if="prd_app_list_1.length>0">
+                <table class="am-table am-table-bordered am-table-striped am-table-compact" style="text-align:left;">
+                    <thead>
+                        <tr>
+                            <th>发布单号</th>
+                            <th>应用名称</th>
+                            <th>应用版本</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in prd_app_list_1">
+                            <td>${line.publish_id}</td>
+                            <td>${line.app_name}</td>
+                            <td>${line.tag_revision}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div v-else-if="prd_app_list_2.length>0">
+                <table class="am-table am-table-bordered am-table-striped am-table-compact" style="text-align:left;">
+                    <thead>
+                        <tr>
+                            <th>发布单号</th>
+                            <th>应用名称</th>
+                            <th>应用版本</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in prd_app_list_2">
+                            <td>${line.publish_id}</td>
+                            <td>${line.app_name}</td>
+                            <td>${line.tag_revision}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit" v-if="flag!='has_running' && flag!='has_not_ready'">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="changeScheduledTimeModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">修改定时发布时间</span>
+        <div slot="body">
+            <div class="am-form">
+                <div class="am-form-group">
+                    <label class="am-fl">定时发布时间<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></label>
+                    <input type="text" class="am-form-field"  id="scheduled_time" placeholder="如需要定时发布, 请选择定时发布时间" v-model="scheduled_time"/>
+                </div>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="setSuccessModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">修改成功标签</span>
+        <div slot="body">
+            <div class="am-tabs" data-am-tabs>
+                <div class="am-tabs-bd" style="margin-top: 20px">
+                    <div class="am-panel am-panel-default" v-if="has_dzbd">
+                        <div class="am-panel-hd">
+                            电子保单
+                        </div>
+                        <table class="am-table am-table-compact am-table-striped am-form" width="100%" style="margin-top: 10px">
+                            <tr>
+                                <td width="20%"></td>
+                                <td width="65%">
+                                    <select multiple data-role="tagsinput" id="dzbd-published">
+                                        <option v-for="one in dzbd_published" :value="one">${one}</option>
+                                    </select>
+                                </td>
+                                <td width="15%"></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="am-panel am-panel-default" v-if="app_list.length>0">
+                        <div class="am-panel-hd">
+                            应用
+                        </div>
+                        <table class="am-table am-table-compact am-table-striped am-form" width="100%">
+                            <tr>
+                                <td width="20%">应用名称</td>
+                                <td width="65%">已成功发布服务器</td>
+                                <td width="15%">已打包</td>
+                            </tr>
+                            <tr v-for="line,index in app_list" style="margin-top: 10px">
+                                <td>${line.app_name}</td>
+                                <td>
+                                    <div v-show="line.app_type=='app'">
+                                        <select multiple data-role="tagsinput" class="app-published" style="padding-left: 20px;">
+                                            <option v-for="one in line.published" :value="one">${one}</option>
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="checkbox" v-model="line.built">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div style="font-size: 14px;color: #E83737;text-align: center">操作提示: 修改已成功发布服务器时，每个项目间按回车进行分隔。</div>
+                </div>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+
+
+</div>
+
+{% endblock %}
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/socket.io.js') }}"></script>
+<script src="{{ url_for('static', filename='assets/js/moment.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='assets/js/amazeui.datetimepicker-se.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='assets/js/amazeui.tagsinput.min.js') }}" ></script>
+<script language="JavaScript">
+
+    {%include 'publish/manage/js/list.js'%}
+    {%include 'publish/manage/js/sortApp.js'%}
+    $(document).ready(function() {
+        list.load_publish_ids();
+        socket = io.connect("{{config['SERVER_URL']}}/workflow");
+        socket.on('notify_new_task', function (d) {
+            console.log("get notify_new_task with: "+d.flow_id);
+            flow_id = d.flow_id
+            list.load_publish_info([flow_id]);
+        });
+    });
+</script>
+{% endblock %}
+
+{% block css %}
+<style>
+.active {
+    color: red;
+    font-weight: bold
+}
+
+#apptable {
+    text-align: left;
+}
+.am-tagsinput{
+    width: 80%;
+}
+
+.normal {
+    font-weight: bold
+}
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.datetimepicker-se.min.css') }}" >
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.tagsinput.css') }}" >
+{% endblock %}

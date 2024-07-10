@@ -1,0 +1,242 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n0" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/mermaid.forest.css') }}" />
+    <div class="admin-content-body" style="height:100%;">
+        <hr>
+        <div class="am-g" id="list" style="height:90%;">
+            <div class="am-u-sm-12 am-u-md-12" style="height:100%;">
+                <div class="am-u-sm-12 am-u-md-8" style="height:100%;overflow-y:auto;">
+                    <div id="mermaid" style="margin:0 auto;text-align:center;min-width:1024px;">
+                    </div>
+                </div>
+                <div class="am-u-sm-12 am-u-md-4">
+                    <table class="am-table">
+                        <thead>
+                            <tr>
+                                <th>项目</th>
+                                <th>值</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>type</td>
+                                <td>
+                                    <div class="am-input-group">
+                                        <input type="text" class="am-form-field" placeholder="" v-model="flow_task_info.type"/>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>key</td>
+                                <td>
+                                    <div class="am-input-group">
+                                        <input type="text" class="am-form-field" placeholder="" v-model="flow_task_info.key"/>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>env</td>
+                                <td>
+                                    <div class="am-input-group">
+                                        <input type="text" class="am-form-field" placeholder="" v-model="flow_task_info.env"/>
+                                        <span class="am-input-group-btn">
+                                            <button class="am-btn am-btn-default" type="button" @click="save('env', $event)">保存</button>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>name</td>
+                                <td>
+                                    <div class="am-input-group">
+                                        <input type="text" class="am-form-field" placeholder="" v-model="flow_task_info.name"/>
+                                        <span class="am-input-group-btn">
+                                            <button class="am-btn am-btn-default" type="button" @click="save('name', $event)">保存</button>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>order</td>
+                                <td>
+                                    <div class="am-input-group">
+                                        <input type="number" class="am-form-field" placeholder="" v-model.number="flow_task_info.order"/>
+                                        <span class="am-input-group-btn">
+                                            <button class="am-btn am-btn-default" type="button" @click="save('order', $event)">保存</button>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>operation_type</td>
+                                <td>
+                                    <div class="am-input-group">
+                                        <select class="am-form-field" v-model="flow_task_info.operation_type">
+                                            <option value="">请选择</option>
+                                            <option v-for="one in operation_list" :value="one">${one}</option>
+                                        </select>
+                                        <span class="am-input-group-btn">
+                                            <button class="am-btn am-btn-default" type="button" @click="save('operation_type', $event)">保存</button>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>trigger_type</td>
+                                <td>
+                                    <div class="am-input-group">
+                                        <input type="number" class="am-form-field" placeholder="" v-model="flow_task_info.trigger_type"/>
+                                        <span class="am-input-group-btn">
+                                            <button class="am-btn am-btn-default" type="button" @click="save('trigger_type', $event)">保存</button>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <hr>
+                    <table class="am-table">
+                        <thead>
+                            <tr>
+                                <th>order</th>
+                                <th>name/desc</th>
+                                <th>func</th>
+                                <th>progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="one in operation_template_list">
+                                <td>${one.order}</td>
+                                <td>${one.name}<br>${one.desc}</td>
+                                <td>${one.func}</td>
+                                <td>${one.progress}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/mermaidAPI.min.js') }}"></script>
+<script language="JavaScript">
+
+    var list = new Vue({
+        el: '#list',
+        data: {
+            flow_task_info: {},
+            flow_type: '{{flow_type}}',
+            active_task_name: '',
+            operation_list: [],
+            operation_template_list: []
+        },
+        methods: {
+            save: function(key, event){
+                this.$http.post("{{url_for('flowProfile.publish_task_info')}}", list.flow_task_info).then(
+                function(response){
+                    console.log(response.data);
+                    window.location.reload();
+                },function(res) {
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            load_flow_task_info: function(task_name){
+                this.$http.get("{{url_for('flowProfile.publish_task_info')}}", {'params':{"flow_type":list.flow_type, "task_name": task_name}, emulateJSON: true}).then(
+                function(response){
+                    console.log(response.data)
+                    list.active_task_name = task_name;
+                    list.flow_task_info = response.data.data;
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            load_task_list: function(){
+                this.$http.get("{{url_for('flowProfile.load_flow_svg')}}", {'params':{"flow_type":list.flow_type}, emulateJSON: true}).then(
+                function(response){
+                    mermaidAPI.initialize({
+                        startOnLoad:false
+                    });
+                    $(function(){
+                        var insertSvg = function(svgCode, bindFunctions){
+                            $("#mermaid").html(svgCode);
+                        };
+                        var graphDefinition = response.data.data.svg;
+                        var graph = mermaidAPI.render('workflow', graphDefinition, insertSvg);
+                    });
+                    bind_click();
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            load_operation_template_type: function(){
+                this.$http.get("{{url_for('operationProfile.template_type')}}").then(
+                function(response){
+                    if(response.data.result==1){
+                        response.data.data.forEach(function(e){
+                            list.operation_list.push(e);
+                        })
+                    }
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        },
+        watch: {
+            'flow_task_info.operation_type': function(val){
+                this.$http.get("{{url_for('operationProfile.template')}}", {'params':{"type":val}, emulateJSON: true}).then(
+                function(response){
+                    console.log(response.data)
+                    list.operation_template_list = response.data.data;
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        }
+    });
+
+    var callback = function(e){
+        console.log(e)
+        list.load_flow_task_info(e);
+    }
+
+
+    $(document).ready(function() {
+
+        list.load_task_list();
+        list.load_operation_template_type();
+
+    });
+
+    function bind_click(){
+        var nodes = $('g[class="nodes"] g[class="node"]');
+        $(nodes).css({'cursor': 'pointer'});
+        $(nodes).on('click', function(){
+            //get current node
+            var id = $(this).attr('id');
+            callback(id);
+        });
+    }
+</script>
+{% endblock %}

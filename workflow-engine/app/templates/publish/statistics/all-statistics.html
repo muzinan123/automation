@@ -1,0 +1,115 @@
+    <div class="am-panel am-panel-default">
+        <div class="am-panel-bd">
+            <div class="am-g am-form" style="margin-bottom:10px;">
+                <div class="am-input-group input-group am-u-md-3 am-u-sm-3" id="begin_date">
+                    <span class="am-input-group-label">开始时间</span>
+                    <input class="am-form-field" v-model="begin_date">
+                    <span class="am-input-group-label datepickerbutton">
+                        <i class="icon-th am-icon-calendar"></i>
+                    </span>
+                </div>
+                <div class="am-input-group input-group am-u-md-3 am-u-sm-3" id="end_date">
+                    <span class="am-input-group-label">结束时间</span>
+                    <input class="am-form-field" v-model="end_date">
+                    <span class="am-input-group-label datepickerbutton">
+                        <i class="icon-th am-icon-calendar"></i>
+                    </span>
+                </div>
+                <div class="am-u-lg-1 am-u-md-1 am-u-sm-2 am-u-end">
+                    <span class="am-input-group-btn">
+                        <button class="am-btn am-btn-sm am-btn-primary" type="button" @click="filter">查询</button>
+                    </span>
+                </div>
+            </div>
+            <table class="am-table am-table-bordered am-table-striped am-table-compact" style="font-size:small">
+                    <thead>
+                        <tr class="am-panel-hd" style="color:#c09853; height:20px">
+                            <th style="border:none;" width="20%">
+                                发布成功率&nbsp总发布数：${total}
+                            </th>
+                            <th colspan="4"></th>
+                            <th style="border:none;text-align:right">
+                                <a class="am-btn am-btn-xs am-btn-default" @click="export_data('all')"><span class="am-icon-file-excel-o"></span> 导出</a>
+                            </th>
+                        </tr>
+                        <tr class="am-btn-success">
+                                <th>部门</th>
+                                <th>产品模块</th>
+                                <th>发布总数</th>
+                                <th>成功数</th>
+                                <th>退回数</th>
+                                <th>发布成功率</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in publish_records">
+                            <td>${line.department}</td>
+                            <td>${line.product}</td>
+                            <td>${line.total}</td>
+                            <td>${line.complete}</td>
+                            <td>${line.abandon}</td>
+                            <td>${line.success_str}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            <table class="am-table am-table-bordered am-table-striped am-table-compact" style="font-size:small">
+                    <thead>
+                        <tr class="am-panel-hd" style="color:#c09853; height:20px">
+                            <th style="border:none;" width="50%">
+                                回退统计
+                            </th>
+                            <th style="border:none;text-align:right">
+                                <a class="am-btn am-btn-xs am-btn-default" @click="export_data('abandon_records')"><span class="am-icon-file-excel-o"></span> 导出</a>
+                            </th>
+                        </tr>
+                        <tr class="am-btn-success">
+                                <th>回退原因</th>
+                                <th>退回数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="v, k in owner_rollback_records">
+                            <td>项目owner自主回退:${k|get_rollback_reason}</td>
+                            <td>${v}</td>
+                        </tr>
+                        <tr v-for="v, k in pre_rollback_records">
+                            <td>预发验证回退:${k|get_rollback_reason}</td>
+                            <td>${v}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            <table class="am-table am-table-bordered am-table-striped am-table-compact" style="font-size:small">
+                    <thead>
+                        <tr class="am-panel-hd" style="color:#c09853; height:20px">
+                            <th style="border:none;" width="20%">
+                                退回次数TOP10
+                            </th>
+                            <th colspan="5"></th>
+                            <th style="border:none;text-align:right">
+                                <a class="am-btn am-btn-xs am-btn-default" @click="export_data('project_abandon_records')"><span class="am-icon-file-excel-o"></span> 导出</a>
+                            </th>
+                        </tr>
+                        <tr class="am-btn-success">
+                                <th>项目ID</th>
+                                <th>项目名称</th>
+                                <th>产品模块</th>
+                                <th>部门</th>
+                                <th>项目类型</th>
+                                <th>Owner</th>
+                                <th>退回次数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in project_abandon_records">
+                            <td>${line.project_id}</td>
+                            <td>${line.name}</td>
+                            <td>${line.product}</td>
+                            <td>${line.department}</td>
+                            <td>${line.type|get_project_type}</td>
+                            <td>${line.owner}</td>
+                            <td>${line.total_abandon}</td>
+                        </tr>
+                    </tbody>
+                </table>
+        </div>
+    </div>

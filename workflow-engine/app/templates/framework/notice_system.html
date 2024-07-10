@@ -1,0 +1,271 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n0" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12">
+                <div class="am-tabs" data-am-tabs="{noSwipe: 1}" id="tabs">
+                    <ul class="am-tabs-nav am-nav am-nav-tabs">
+                        <li class="am-active"><a href="#tab1">公告提示</a></li>
+                        <li><a href="#tab2">系统更新说明</a></li>
+                    </ul>
+                    <div class="am-tabs-bd">
+                        <div class="am-tab-panel am-active" id="tab1">
+                            <div class="am-u-sm-12">
+                                <table class="am-table am-table-striped am-table-hover table-main">
+                                    <thead>
+                                        <tr>
+                                            <th class="table-id" width="10%">星期</th>
+                                            <th class="table-title am-hide-sm-only" width="55%">公告内容</th>
+                                            <th class="table-set" width="15%">修改时间</th>
+                                            <th class="table-set" width="20%">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="line in noticeList">
+                                            <td>${line.week_day|get_weekday}</td>
+                                            <td v-html="line.content"></td>
+                                            <td>${line.update_date}</td>
+                                            <td><a class="am-btn am-btn-primary" @click="add_notice(line.week_day)">编辑</a></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="am-tab-panel" id="tab2">
+                            <div class="am-u-sm-12">
+                                <table class="am-table am-table-striped am-table-hover table-main">
+                                    <thead>
+                                        <tr>
+                                            <th class="table-title am-hide-sm-only" width="65%">更新内容</th>
+                                            <th class="table-set" width="15%">修改时间</th>
+                                            <th class="table-set" width="20%">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td v-html="content"></td>
+                                            <td>${updateDate}</td>
+                                            <td><a class="am-btn am-btn-primary" @click="new_privilege()">编辑</a></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block html %}
+    <div class="am-g" id="updateNotice">
+        <modal :show="show" :width=1000 v-on:close="close" style="width:1000px">
+            <span slot="header">公告信息</span>
+            <div slot="body" style="height:95%;overflow:auto;width: 100%">
+                <table class="am-table am-table-compact am-table-bordered am-table-striped am-form" style="text-align:left;font-size:small">
+                <tbody>
+                    <tr>
+                        <td>
+                            <textarea  rows="20" v-model="noticeContents" style="resize:none;"></textarea>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+            <span slot="footer" class="am-modal-btn" @click="updateBulletin">确定</span>
+            <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+        </modal>
+    </div>
+    <div class="am-g" id="flowChart">
+        <modal :show="show" :width=1000 v-on:close="close" style="width:1000px">
+            <span slot="header">系统更新说明</span>
+            <div slot="body" style="height:95%;overflow:auto;width: 100%">
+                <table class="am-table am-table-compact am-table-bordered am-table-striped am-form" style="text-align:left;font-size:small">
+                <tbody>
+                    <tr>
+                        <td>
+                            <textarea  rows="20" v-model="contents" style="resize:none;"></textarea>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+            <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+            <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+        </modal>
+    </div>
+{% endblock %}
+{% block js %}
+<script language="JavaScript">
+
+    var tab1 = new Vue({
+        el: '#tab1',
+        data: {
+            noticeList:[]
+        },
+        methods: {
+            add_notice: function (week_day){
+                updateNotice.show = true;
+                updateNotice.showNotice(week_day);
+            },
+		    noticeshow: function() {
+		        this.$http.get("{{url_for('noticeSystem.notice_operation')}}").then(
+		        function(response){
+                    if(response.data.result == 1){
+                        this.noticeList = response.data.data
+                    }
+                },
+                function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+		    }
+        }
+    });
+
+    var updateNotice = new Vue({
+        el: '#updateNotice',
+        data:{
+            noticeContents: '',
+            week_day: '',
+            show: false
+        },
+        methods: {
+            close: function() {
+		        this.show = false;
+		    },
+            updateBulletin: function() {
+                this.$http.post("{{url_for('noticeSystem.notice_operation')}}", {'content':this.noticeContents,week_day:this.week_day}, {emulateJSON: true}).then(
+                function(response){
+                    if(response.data.result == 1){
+                        infoModal.msg = '修改成功';
+                        infoModal.show = true;
+                        this.close();
+                        tab1.noticeshow();
+                    }else{
+                        infoModal.msg = '修改失败'
+                        infoModal.show = true
+                        this.close();
+                    }
+                },
+                function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            showNotice: function(week_day) {
+                this.noticeContents = '';
+                this.week_day = '';
+		        this.$http.get("{{url_for('noticeSystem.notice_operation')}}", {'params':{"week_day":week_day}, emulateJSON: true}).then(
+                function(response){
+                    if(response.data.result == 1){
+                        this.noticeContents = response.data.data[0].content
+                        this.week_day = response.data.data[0].week_day
+                    }
+                },
+                function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        }
+    });
+
+    var tab2 = new Vue({
+        el: '#tab2',
+        data: {
+            content: '',
+            createDate: '',
+            cteateUserid: '',
+            updateDate: '',
+        },
+        methods: {
+            new_privilege: function (){
+                flowChart.load_details();
+            },
+		    systemshow: function() {
+		        this.$http.get("{{url_for('noticeSystem.system_operation')}}").then(
+		        function(response){
+		            if(response.data.result == 1) {
+                        this.content = response.data.data.content
+                        this.createDate = response.data.data.create_date
+                        this.cteateUserid = response.data.data.cteate_userid
+                        this.updateDate = response.data.data.update_date
+                    }
+                },
+                function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+		    }
+        }
+    });
+
+    var flowChart = new Vue({
+        el: '#flowChart',
+        data:{
+            contents: '',
+            show: false
+        },
+        methods: {
+            close: function() {
+		        this.show=false;
+		    },
+            commit: function() {
+                this.$http.post("{{url_for('noticeSystem.system_operation')}}", {'content':this.contents}, {emulateJSON: true}).then(
+                    function(response){
+                        if(response.data.result == 1){
+                            infoModal.msg = '修改成功';
+                            infoModal.show = true;
+                            this.close();
+                            tab2.systemshow();
+                        }else{
+                            infoModal.msg = '修改失败'
+                            infoModal.show = true
+                            this.close();
+                        }
+
+                    },
+                    function(res){
+                        console.log(res);
+                        errorModal.msg='网络连接异常，请稍后重试。';
+                        errorModal.show=true;
+                    });
+            },
+            load_details: function() {
+                this.contents = '';
+                this.$http.get("{{url_for('noticeSystem.system_operation')}}").then(
+		        function(response){
+                    this.contents =  response.data.data.content
+                },
+                function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+                this.show = true;
+            }
+        }
+    });
+    $(document).ready(function() {
+        tab1.noticeshow();
+        tab2.systemshow();
+    });
+
+</script>
+{% endblock %}

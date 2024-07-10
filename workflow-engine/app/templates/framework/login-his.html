@@ -1,0 +1,148 @@
+{% extends "framework/frame.html" %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">用户与权限</strong> / <small>登录记录</small></div>
+        </div>
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12" id="v-login-his">
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="login_date" type="text" class="am-form-field" placeholder="选择日期" data-am-datepicker="{theme: 'default'}" v-model="loginAt" readonly>
+                    <span class="am-input-group-btn">
+                        <button id="calendar" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-calendar"></span> </button>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="query" type="text" class="am-form-field" placeholder="用户名或IP" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <table class="am-table am-table-striped am-table-hover table-main" id="his_list">
+                    <thead>
+                    <tr>
+                        <th class="table-id am-hide-sm-only">ID</th>
+                        <th class="table-title">用户名</th>
+                        <th class="table-title">登录时间</th>
+                        <th class="table-title">登录IP</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in hislist">
+                            <td class="am-hide-sm-only">${line.id}</td>
+                            <td>${line.name}</td>
+                            <td>${line.login_at}</td>
+                            <td>${line.login_ip}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="prev">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="next">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+
+    data = {
+        query: '',
+        loginAt: '',
+        hislist: [],
+        total: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1
+    }
+
+    new Vue({
+        el: '#v-login-his',
+        data: data,
+        methods: {
+            prev: function(event){
+                load_his_list(this.now*1-1);
+            },
+            go: function(event){
+                load_his_list(event.target.innerHTML);
+            },
+            next: function(event){
+                load_his_list(this.now*1+1);
+            },
+            filter: function(event){
+                load_his_list(this.now);
+            }
+        }
+    })
+
+    $(document).ready(function() {
+
+        //手工展开对应的主菜单
+        $("#sub-menu-user").collapse('open')
+
+        load_his_list(data.now);
+
+    });
+    function load_his_list(p){
+        data.now = p;
+        $.AMUI.progress.start();
+        console.log("start load user list");
+        jQuery.ajax({
+            url: "{{url_for('baseProfile.login_his__his')}}",
+            dataType: "json",
+            data: {"p": p ,"query": data.query ,"loginAt":data.loginAt, "r":Math.random()},
+            type: "GET",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                data.total = response.data.total;
+                paging(response.data.prevNum, response.data.nextNum, response.data.total, response.data.perPage)
+                data.hislist = []
+                response.data.hisList.forEach(function(e){
+                    data.hislist.push(e);
+                });
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+</script>
+
+{% endblock %}

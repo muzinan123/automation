@@ -1,0 +1,87 @@
+{% extends "framework/frame.html" %}
+
+{% block content %}
+    <div class="am-cf am-padding am-padding-bottom-0" id="list">
+        <div class="am-cf"><strong class="am-text-primary am-text-lg">用户中心</strong>
+            <table class="am-table">
+{#                <thead>#}
+{#                    <tr>#}
+{#                        <th>网站名称</th>#}
+{#                        <th>网址</th>#}
+{#                        <th>创建时间</th>#}
+{#                    </tr>#}
+{#                </thead>#}
+                <tbody>
+                    <tr>
+                        <td style="width: 10%">用户名</td>
+                        <td>{{user.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>姓名</td>
+                        <td>{{user.real_name }}</td>
+                    </tr>
+                    <tr>
+                        <td>部门</td>
+                        <td>{{user.department.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>角色</td>
+                        <td>{{user.role.alias }}</td>
+                    </tr>
+                    <tr>
+                        <td>权限</td>
+                        <td>
+                            {%if session['userPrivileges']['dev']%}<span class="am-badge am-badge-secondary am-round" style="font-size: 15px">开发</span>{%endif%}
+                            {%if session['userPrivileges']['qa']%}<span class="am-badge am-badge-secondary am-round" style="font-size: 15px">测试</span>{%endif%}
+                            {%if session['userPrivileges']['ba']%}<span class="am-badge am-badge-secondary am-round" style="font-size: 15px">需求</span>{%endif%}
+                            {%if session['userPrivileges']['code_review']%}<span class="am-badge am-badge-secondary am-round" style="font-size: 15px">代码评审</span>{%endif%}
+                            {%if session['userPrivileges']['dba']%}<span class="am-badge am-badge-secondary am-round" style="font-size: 15px">数据库管理员</span>{%endif%}
+                            {%if session['userPrivileges']['pe']%}<span class="am-badge am-badge-secondary am-round" style="font-size: 15px">应用运维</span>{%endif%}
+                            {%if session['userPrivileges']['monitor']%}<span class="am-badge am-badge-secondary am-round" style="font-size: 15px">应用监控</span>{%endif%}
+                            {%if session['userPrivileges']['duang_admin']%}<span class="am-badge am-badge-secondary am-round" style="font-size: 15px">管理员</span>{%endif%}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>手机号</td>
+                        <td>{{user.phone }}</td>
+                    </tr>
+                    <tr>
+                        <td>邮箱</td>
+                        <td>{{user.email }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="padding-top: 20px">如需要修改以上信息，请邮件联系core@zhongan.com</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/socket.io.js') }}"></script>
+<script src="{{ url_for('static', filename='assets/js/mermaidAPI.min.js') }}"></script>
+<script language="JavaScript">
+    data = {
+            result_list: [],
+            query: '',
+            orderby: 'start_at',
+            orderdesc: true,
+            total: 0,
+            totalPage: 0,
+            pagenums: [],
+            hasPre: true,
+            hasNext: true,
+            now: 1,
+    }
+    var list = new Vue({
+        el: '#list',
+        data: data,
+        methods: {
+            show_flow_chart: function(){
+
+            }
+        }
+    });
+</script>
+{% endblock %}

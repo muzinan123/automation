@@ -1,0 +1,231 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n0" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/mermaid.forest.css') }}" />
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">流程配置</strong> / <small>发布流程</small></div>
+        </div>
+        <hr>
+        <div class="am-g" id="list">
+            <div class="am-u-sm-12 am-u-md-12" style="overflow:auto;">
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="query" type="text" class="am-form-field" placeholder="发布单号" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <table class="am-table">
+                    <thead>
+                        <tr>
+                            <th>发布单号</th>
+                            <th>流程模板</th>
+                            <th>当前节点</th>
+                            <th class="am-hide-sm-only">开始时间</th>
+                            <th class="am-hide-sm-only">改动时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="v,k in flow_instance_list">
+                            <td><a href="#" @click="show_detail(v.id)">${v.id}</a></td>
+                            <td>${v.type}</td>
+                            <td>${v.current_task_type}</td>
+                            <td class="am-hide-sm-only">${v.create_at}</td>
+                            <td class="am-hide-sm-only">${v.modify_at}</td>
+                            <td>
+                                <a class="am-btn am-btn-default am-btn-xs" v-if="v.current_flow_info.directions" v-for="dv, dk in v.current_flow_info.directions" href="#" @click="flow_go(v.id, dk)" style="margin-left:2px;margin-right:2px;">${dv.name}</a>
+                                <a href="#" class="am-btn am-btn-default am-btn-xs" @click="edit(v.id)">编辑</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="first">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="last">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block html %}
+<div id="editModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">发布信息编辑</span>
+        <div slot="body">
+            <span class="am-badge am-badge-secondary am-text-default">${flow_id}</span>
+            <hr style="margin:5px;">
+            <textarea id="flow" v-model="flow_data" style="width:100%;height:800px" ></textarea>
+        </div>
+        <span slot="footer" class="am-modal-btn"  @click="commit">保存</span>
+    </modal>
+</div>
+{% endblock %}
+{% block js %}
+<script language="JavaScript">
+
+    var editModal = new Vue({
+        el: '#editModal',
+        data: {
+            width: 800,
+            show: false,
+            flow_id: '',
+            flow_data: ''
+        },
+        methods:{
+            close: function(){
+                this.show = false
+            },
+            commit: function(){
+                this.show = false
+                this.$http.post("{{url_for('publishProfile.update_flow_data')}}", {'flow_id': editModal.flow_id, 'flow_data': JSON.parse(editModal.flow_data)}).then(
+                function(response){
+                   if(response.data.result == 1){
+                        infoModal.msg = '保存成功'
+                        infoModal.show = true
+                        this.reset()
+                   }else{
+                        errorModal.msg='保存失败';
+                        errorModal.show=true;
+                        this.reset()
+                   }
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                    this.reset()
+                })
+            },
+            reset: function(){
+                this.flow_id = ''
+                this.flow_data = ''
+            }
+        }
+    });
+    data = {
+        flow_instance_list: [],
+        query: '',
+        orderby: 'create_at',
+        orderdesc: true,
+        total: 0,
+        totalPage: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1,
+    }
+
+    var list = new Vue({
+        el: '#list',
+        data: data,
+        methods: {
+            first: function(event){
+                this.load_flow_instance_list(1);
+            },
+            go: function(event){
+                this.load_flow_instance_list(event.target.innerHTML);
+            },
+            last: function(event){
+                this.load_flow_instance_list(data.totalPage);
+            },
+            filter: function(){
+                this.load_flow_instance_list(data.now);
+            },
+            load_flow_instance_list: function(p){
+                data.now = p;
+                this.$http.get("{{url_for('flowProfile.publish_flow')}}", {'params':{"p": p ,"query": data.query, "order_by":data.orderby,"order_desc":data.orderdesc}, emulateJSON: true}).then(
+                function(response){
+                    console.log(response.data)
+                    data.total = response.data.data.total;
+                    paging(response.data.data.prevNum, response.data.data.nextNum, response.data.data.total, response.data.data.perPage)
+                    data.flow_instance_list = []
+                    response.data.data.publishFlowList.forEach(function(e){
+                        data.flow_instance_list.push(e);
+                    });
+                },
+                function(res) {
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            flow_go: function(flow_id, direction){
+                this.$http.post("{{url_for('flowProfile.publish_flow')}}", {'flow_id':flow_id,'direction':direction, 'operator': 'admin'}, {emulateJSON: true}).then(
+                function(response){
+                    console.log(response.data)
+                    if(response.data.result == 1){
+                        list.load_flow_instance_list(data.now);
+                    }else{
+                        errorModal.msg='流程操作失败。';
+                        errorModal.show=true;
+                    }
+                },
+                function(res) {
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            show_detail: function(flow_id){
+                window.open("{{url_for('flowProfile.publish_flow_detail', flow_id='')}}"+flow_id,'_blank');
+            },
+            edit: function(flow_id){
+                this.$http.get("/publish/"+flow_id+"/data").then(
+                function(response){
+                    console.log(response.data)
+                    editModal.flow_id = flow_id
+                    editModal.show = true
+                    editModal.flow_data = JSON.stringify(response.data.publish, null, 2)
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        }
+    });
+
+    $(document).ready(function() {
+
+        list.load_flow_instance_list(data.now);
+
+    });
+
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.totalPage = totalPage
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+</script>
+{% endblock %}

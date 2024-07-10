@@ -1,0 +1,219 @@
+{% extends "framework/frame.html" %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">通知列表</strong></div>
+        </div>
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12" id="notification-list">
+
+                <div class="am-input-group input-group am-u-lg-2 am-u-sm-4" id="login_date">
+                    <input class="am-form-field" v-model="createAt">
+                    <span class="am-input-group-label datepickerbutton">
+                        <i class="icon-th am-icon-calendar"></i>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-2 am-u-sm-4">
+                    <input id="query" type="text" class="am-form-field" placeholder="内容" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+                <div class="am-input-group am-u-lg-1 am-u-sm-2" >
+                    <select multiple data-am-selected id="readed" placeholder="未读">
+                        <option value="false">未读</option>
+                        <option value="true">已读</option>
+                    </select>
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="search_readed"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+                <div class="am-input-group am-u-lg-1 am-u-sm-1">
+                    <span class="am-input-group-btn">
+                        <a class="am-btn am-btn-default" @click="all_read"><span class="am-icon-check"></span> 全部已读</a>
+                    </span>
+                </div>
+                <table class="am-table am-table-striped am-table-hover table-main" id="his_list">
+                    <thead>
+                    <tr>
+                        <th class="table-title"></th>
+                        <th class="table-title">内容</th>
+                        <th class="table-title">类别</th>
+                        <th class="table-title">通知时间</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in msglist">
+                            <td>
+                                <span v-if="line.readed"><i class="am-icon-check am-icon-fw"></i> 已读</span>
+                                <span v-if="!line.readed"><i class="am-icon-exclamation am-icon-fw"></i> 未读</span>
+                            </td>
+                            <td v-html="line.content" @click="read(line.id)"></td>
+                            <td>${line.type|get_process_name}</td>
+                            <td>${line.created_at}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="prev">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="next">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+
+{% endblock %}
+
+{% block css%}
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.datetimepicker-se.min.css') }}" >
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/moment.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='assets/js/amazeui.datetimepicker-se.min.js') }}" ></script>
+<script language="JavaScript">
+
+    data = {
+        query: '',
+        createAt: '',
+        msglist: [],
+        total: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1,
+        readed: false,
+    }
+
+    new Vue({
+        el: '#notification-list',
+        data: data,
+        methods: {
+            prev: function(event){
+                load_notification_list(this.now*1-1);
+            },
+            go: function(event){
+                load_notification_list(event.target.innerHTML);
+            },
+            next: function(event){
+                load_notification_list(this.now*1+1);
+            },
+            filter: function(event){
+                this.createAt = $('#login_date input').val()
+                load_notification_list(this.now);
+            },
+            read: function(id){
+                set_read(id);
+            },
+            all_read: function(){
+                set_all_read();
+            },
+            search_readed: function(){
+                this.createAt = $('#login_date input').val()
+                if($('#readed').val().length>1){
+                    this.readed = ''
+                }else{
+                    this.readed = $('#readed').val()[0]
+                }
+                load_notification_list(this.now);
+            }
+        }
+    })
+
+    $(document).ready(function() {
+
+        //手工展开对应的主菜单
+        $("#sub-menu-user").collapse('open')
+        $('#login_date').datetimepicker({
+            format: 'YYYY-MM-DD'
+          });
+        load_notification_list(data.now);
+
+    });
+    function set_all_read(){
+        jQuery.ajax({
+            url: "{{url_for('baseProfile.notification_list__list')}}",
+            dataType: "json",
+            data: {"all": true, "r":Math.random()},
+            type: "POST",
+            timeout : timeout,
+            success: function(response) {
+                load_notification_list(data.now);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                //be quite
+            }
+        });
+    }
+    function set_read(id){
+        jQuery.ajax({
+            url: "{{url_for('baseProfile.notification_list__list')}}",
+            dataType: "json",
+            data: {"id": id, "r":Math.random()},
+            type: "POST",
+            timeout : timeout,
+            success: function(response) {
+                //be quite
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                //be quite
+            }
+        });
+    }
+    function load_notification_list(p){
+        data.now = p;
+        $.AMUI.progress.start();
+        console.log("start load user list");
+        jQuery.ajax({
+            url: "{{url_for('baseProfile.notification_list__list')}}",
+            dataType: "json",
+            data: {"p": p ,"query": data.query ,"createAt": $('#login_date input').val(), "readed": data.readed, "r":Math.random()},
+            type: "GET",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                data.total = response.data.total;
+                paging(response.data.prevNum, response.data.nextNum, response.data.total, response.data.perPage)
+                data.msglist = []
+                response.data.msgList.forEach(function(e){
+                    data.msglist.push(e);
+                });
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+</script>
+
+{% endblock %}

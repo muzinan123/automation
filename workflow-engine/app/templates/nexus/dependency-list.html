@@ -1,0 +1,348 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n14" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">实用工具</strong> / <small>Parent依赖版本查询</small></div>
+        </div>
+        <hr>
+        <div class="am-g" id="list">
+            <div class="am-u-sm-12 am-u-md-12" style="overflow:auto;">
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="query" type="text" class="am-form-field" placeholder="应用名称" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <b>当前Parent版本: <a href="#" @click="get_log('parent')">${parent_version}</a></b>
+                </div>
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <a class="am-btn am-btn-default" href="{{url_for('nexusProfile.get_dependency_parent_pom_xml')}}" target="_blank">下载pom.xml</a>
+                </div>
+
+                <table class="am-table">
+                    <thead>
+                        <tr>
+                            <th>应用名称</th>
+                            <th>版本</th>
+                            <th>创建时间</th>
+                            <th>更新时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="v,k in dependency_list">
+                            <td><a href="#" @click="get_log(v.artifact_id)">${v.artifact_id}</a></td>
+                            <td>${v.version}</td>
+                            <td>${v.create_at}</td>
+                            <td>${v.modify_at}</td>
+                            <td>
+                                <a href="#" @click="mod(v.artifact_id)" class="am-btn am-btn-warning">手工调整版本</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a href="#" @click="first">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a href="#" @click="last">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block html %}
+    <div id="log">
+        <modal :show="show" v-on:close="close">
+            <span slot="header">${share_name}</span>
+            <div slot="body">
+                <table class="am-table am-table-bordered">
+                    <thead>
+                        <tr >
+                            <th style="text-align:center">项目ID</th>
+                            <th style="text-align:center">版本</th>
+                            <th style="text-align:center">
+                                更新时间
+                                <a href="#" @click="sortByTime">
+                                    <i v-if="!asc" class="am-icon-sort-desc"></i>
+                                    <i v-if="asc" class="am-icon-sort-asc"></i>
+                                </a>
+                            </th>
+                            <th style="text-align:center">状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in log_list">
+                            <td>${line.project_id}</td>
+                            <td>${line.version}</td>
+                            <td>${line.operate_time}</td>
+                            <td>${line.status}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="am-cf">
+                    共 <span>${total}</span> 条记录
+                    <div class="am-fr">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a href="#" @click="first">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a href="#" @click="last">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </modal>
+    </div>
+
+    <div id="modModal">
+        <modal :show="show" :width="width" v-on:close="close">
+            <span slot="header">手工调整版本</span>
+            <div slot="body">
+                <div class="am-form">
+                    <div class="am-form-group">
+                        <label class="am-fl">应用名称(ArtifactId)</label>
+                        <input type="text" v-model="artifact_id" disabled="disabled"/>
+                    </div>
+                    <div class="am-form-group">
+                        <label class="am-fl">版本<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></label>
+                        <input type="text" v-model="version" placeholder="请填写版本"/>
+                    </div>
+                </div>
+            </div>
+            <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+            <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+        </modal>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+
+    data = {
+        dependency_list: [],
+        query: '',
+        orderby: 'create_at',
+        orderdesc: true,
+        total: 0,
+        totalPage: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1,
+        parent_version: '',
+    }
+
+    log_data = {
+        log_list: [],
+        orderby: 'create_at',
+        orderdesc: true,
+        total: 0,
+        totalPage: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1,
+        share_name: "",
+        asc: false,
+        show: false
+    }
+
+    var modModal = new Vue({
+        el: '#modModal',
+        data : {
+            show: false,
+            width: 400,
+            artifact_id: '',
+            version: ''
+        },
+        methods: {
+            close: function() {
+                this.show=false;
+            },
+            commit: function() {
+                if(this.version){
+                    this.show=false;
+                    this.$http.post("{{url_for('nexusProfile.mod_version')}}", {'artifact_id':this.artifact_id,'version':this.version}, {emulateJSON: true}).then(
+                    function(response){
+                        list.load_dependency_list(data.now);
+                        list.load_parent_version();
+                    },
+                    function(res){
+                        errorModal.msg='网络连接异常，请稍后重试。';
+                        errorModal.show=true;
+                    })
+                }
+            }
+        }
+    });
+
+    var log = new Vue({
+        el: "#log",
+        data: log_data,
+        methods:{
+            first: function(event){
+                this.get_log(1);
+            },
+            go: function(event){
+                this.get_log(event.target.innerHTML);
+            },
+            last: function(event){
+                this.get_log(data.totalPage);
+            },
+            close: function(){
+                log_data.show = false
+            },
+            get_log: function(p){
+                console.log("Page num: ",p)
+                log_data.now = p
+                this.$http.get("{{url_for('nexusProfile.list_dependency_log')}}", {'params':{"p": p, "share_name": log_data.share_name, "asc": log_data.asc}, emulateJSON: true}).then(
+                function(response){
+                    console.log(response.data)
+                    log_data.log_list = []
+                    if(response.data.result==1){
+                        log_data.log_list = response.data.data.logList
+                        for(i=0; i<log_data.log_list.length; i++){
+                            log_data.log_list[i].operate_time = formatDate(log_data.log_list[i].operate_time["$date"])
+                        }
+                        log_data.total = response.data.data.total
+                        log_paging(response.data.data.prevNum, response.data.data.nextNum, response.data.data.total, response.data.data.perPage)
+                    }
+                },
+                function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            sortByTime: function(){
+                log_data.asc = !log_data.asc
+                this.get_log(log_data.now)
+            }
+        }
+    });
+
+    var list = new Vue({
+        el: '#list',
+        data: data,
+        methods: {
+            first: function(event){
+                this.load_dependency_list(1);
+            },
+            go: function(event){
+                this.load_dependency_list(event.target.innerHTML);
+            },
+            last: function(event){
+                this.load_dependency_list(data.totalPage);
+            },
+            filter: function(){
+                this.load_dependency_list(data.now);
+            },
+            load_dependency_list: function(p){
+                data.now = p;
+                this.$http.get("{{url_for('nexusProfile.list_dependency')}}", {'params':{"p": p ,"query": data.query, "order_by":data.orderby,"order_desc":data.orderdesc}, emulateJSON: true}).then(
+                function(response){
+                    console.log(response.data)
+                    data.total = response.data.data.total;
+                    paging(response.data.data.prevNum, response.data.data.nextNum, response.data.data.total, response.data.data.perPage)
+                    data.dependency_list = []
+                    response.data.data.dependencyList.forEach(function(e){
+                        data.dependency_list.push(e);
+                    });
+                },
+                function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            load_parent_version: function(){
+                this.$http.get("{{url_for('nexusProfile.list_dependency_parent_version')}}", {emulateJSON: true}).then(
+                function(response){
+                    console.log(response.data)
+                    if(response.data.result==1){
+                        data.parent_version = response.data.data
+                    }
+                },
+                function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            get_log: function(share_name){
+                log_data.now = 1
+                log_data.share_name = share_name
+                log.get_log(1)
+                log_data.show = true
+            },
+            mod: function(artifact_id){
+                modModal.artifact_id = artifact_id;
+                modModal,version = '';
+                modModal.show = true;
+            }
+        }
+    });
+
+    $(document).ready(function() {
+        list.load_dependency_list(data.now);
+        list.load_parent_version();
+    });
+
+
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.totalPage = totalPage
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+
+    function log_paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        log_data.totalPage = totalPage
+        log_data.hasPre = prevNum>0;
+        log_data.hasNext = nextNum<=totalPage;
+
+        offset = log_data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        log_data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            log_data.pagenums.push(i);
+        }
+    }
+</script>
+{% endblock %}

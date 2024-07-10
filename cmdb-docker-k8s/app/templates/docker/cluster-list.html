@@ -1,0 +1,351 @@
+{% extends "framework/base_with_dropdown.html" %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">Docker</strong> / <small>Cluster</small></div>
+        </div>
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12" id="list">
+
+                <div class="am-input-group am-u-lg-2 am-u-sm-4">
+                    <select multiple data-am-selected id="org-selected">
+                        <option value="ZA" selected>众安保险</option>
+                        <option value="ZATECH" selected>众安科技</option>
+                        <option value="BAOYUN" selected>豹云</option>
+                        <option value="WX" selected>威寻</option>
+                        <option value="ZAINTL" selected>众安国际</option>
+                    </select>
+                    <span class="am-input-group-btn">
+                        <button class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-2 am-u-sm-4">
+                    <input id="query" type="text" class="am-form-field" placeholder="名称" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-1 am-u-sm-1">
+                    <span class="am-input-group-btn">
+                        <a class="am-btn am-btn-success" @click="add"><span class="am-icon-plus"></span> 新建</a>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-1 am-u-sm-1">
+                    <span class="am-input-group-btn">
+                        <a class="am-btn am-btn-default" @click="export"><span class="am-icon-file-excel-o"></span> 导出</a>
+                    </span>
+                </div>
+
+                <table class="am-table am-table-striped am-table-hover table-main">
+                    <thead>
+                    <tr>
+                        <th class="table-title am-hide-sm-only" @click="sort('id')" >
+                            <a href="#" title="点击排序">ID</a>
+                            <span v-if="orderby=='id'">
+                                <i v-if="!orderdesc" class="am-icon-sort-asc"></i>
+                                <i v-if="orderdesc" class="am-icon-sort-desc"></i>
+                            </span>
+                        </th>
+                        <th class="table-title am-hide-sm-only" @click="sort('name')" >
+                            <a href="#" title="点击排序">名称</a>
+                            <span v-if="orderby=='name'">
+                                <i v-if="!orderdesc" class="am-icon-sort-asc"></i>
+                                <i v-if="orderdesc" class="am-icon-sort-desc"></i>
+                            </span>
+                        </th>
+                        <th class="table-title" @click="sort('org')" >
+                            <a href="#" title="点击排序">公司</a>
+                            <span v-if="orderby=='org'">
+                                <i v-if="!orderdesc" class="am-icon-sort-asc"></i>
+                                <i v-if="orderdesc" class="am-icon-sort-desc"></i>
+                            </span>
+                        </th>
+                        <th class="table-title" @click="sort('env')" >
+                            <a href="#" title="点击排序">环境</a>
+                            <span v-if="orderby=='env'">
+                                <i v-if="!orderdesc" class="am-icon-sort-asc"></i>
+                                <i v-if="orderdesc" class="am-icon-sort-desc"></i>
+                            </span>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in cluster_list">
+                            <td>
+                                <a target="_blank" href="{{url_for('docker_cluster_detail')}}?id=${line.id}">
+                                    ${line.id}
+                                </a>
+                            </td>
+                            <td>${line.name}</td>
+                            <td>${line.org}</td>
+                            <td>${line.env}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="first">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="last">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+
+{% endblock %}
+
+{% block html%}
+
+    <div id="newModal">
+        <form id="newForm" action="" class="am-form">
+            <dialog v-bind:show.sync="show">
+                <span slot="header">新增Cluster</span>
+                <div slot="body">
+                    <fieldset>
+                        <div class="am-form-group">
+                            <input type="text" minlength="3" v-model="name"
+                                   placeholder="请输入名称"/>
+                        </div>
+                        <div class="am-form-group">
+                            <select v-model="org">
+                                <option value="ZA">众安保险</option>
+                                <option value="ZATECH">众安科技</option>
+                                <option value="BAOYUN">豹云</option>
+                                <option value="WX">威寻</option>
+                                <option value="ZAINTL">众安国际</option>
+                            </select>
+                        </div>
+                        <div class="am-form-group">
+                            <select v-model="env">
+                                <option value="test">测试</option>
+                                <option value="pre">预发</option>
+                                <option value="prd">生产</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                </div>
+                <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+            </dialog>
+        </form>
+    </div>
+
+    <div id="errorModal">
+        <dialog v-bind:show.sync="show">
+            <span slot="header">错误</span>
+            <span slot="body">${msg}</span>
+            <span slot="footer" class="am-modal-btn" @click="close">确定</span>
+        </dialog>
+    </div>
+
+    <template id="dialog">
+        <div>
+            <div class="am-modal am-modal-alert" v-bind:class="{ 'am-modal-active': show }" tabindex="-1" v-if="show" style="display:block;">
+                <div class="am-modal-dialog" style="width:300px;">
+                    <div class="am-modal-hd">
+                        <slot name="header"></slot>
+                        <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close @click="close">&times;</a>
+                    </div>
+                    <div class="am-modal-bd">
+                        <slot name="body"></slot>
+                    </div>
+                    <div class="am-modal-footer">
+                        <slot name="footer"></slot>
+                    </div>
+                </div>
+            </div>
+            <div class="am-dimmer" data-am-dimmer v-bind:class="{ 'am-active': show }" v-if="show" style="display:block;"></div>
+        </div>
+    </template>
+
+{% endblock %}
+
+{% block css %}
+
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+
+    data = {
+        query: '',
+        org: '',
+        orderby: 'id',
+        orderdesc: true,
+        cluster_list: [],
+        total: 0,
+        totalPage: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1
+    }
+
+    new Vue({
+        el: '#list',
+        data: data,
+        methods: {
+            first: function(event){
+                load_cluster_list(1);
+            },
+            go: function(event){
+                load_cluster_list(event.target.innerHTML);
+            },
+            last: function(event){
+                load_cluster_list(data.totalPage);
+            },
+            filter: function(event){
+                this.now = 1
+                load_cluster_list(this.now);
+            },
+            export: function(event){
+                org = $('#org-selected').val().join("+");
+                window.location.href="{{url_for('docker_cluster_export')}}?query="+
+                encodeURIComponent(data.query)+"&org="+org+"&order_by="+data.orderby+"&order_desc="+data.orderdesc
+            },
+            sort: function(orderby){
+                if(data.orderby == orderby){
+                    data.orderdesc = !data.orderdesc
+                }else{
+                    data.orderby = orderby
+                }
+                load_cluster_list(this.now);
+            },
+            add: function(event){
+                newModal.show=true;
+            }
+        }
+    })
+
+    Vue.component('dialog', {
+	    template: '#dialog',
+	    props: {
+	        show:{
+	            type: Boolean,
+	            default: false
+	        }
+	    },
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	})
+
+	var errorModal = new Vue({
+	    el: '#errorModal',
+	    data: {
+			show: false,
+			msg: ''
+		},
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	})
+
+	var newModal = new Vue({
+	    el: '#newModal',
+	    data: {
+	        show: false,
+	        name: '',
+	        org: '',
+	        env: ''
+	    },
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    },
+		    commit: function() {
+		        if(this.name && this.org && this.env){
+		            add_cluster(this.name, this.org, this.env);
+		            this.show = false;
+		        }
+		    }
+	    }
+	});
+
+    $(document).ready(function() {
+
+        load_cluster_list(data.now);
+
+    });
+    function load_cluster_list(p){
+        data.now = p;
+        data.org = $('#org-selected').val().join("+");
+        $.AMUI.progress.start();
+        console.log("start load cluster list");
+        jQuery.ajax({
+            url: "{{url_for('docker_cluster')}}",
+            dataType: "json",
+            data: {"p": p ,"query": data.query ,"org":data.org, "order_by":data.orderby,"order_desc":data.orderdesc},
+            type: "GET",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                data.total = response.data.total;
+                paging(response.data.prevNum, response.data.nextNum, response.data.total, response.data.perPage)
+                data.cluster_list = []
+                response.data.clusterList.forEach(function(e){
+                    data.cluster_list.push(e);
+                });
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.totalPage = totalPage
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+    function add_cluster(name, org, env){
+        $.AMUI.progress.start();
+        jQuery.ajax({
+            url: "{{url_for('docker_cluster')}}",
+            dataType: "json",
+            data: {"name":name, "org":org, "env":env},
+            type: "PUT",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                load_cluster_list(1);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+</script>
+
+{% endblock %}

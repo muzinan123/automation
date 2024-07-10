@@ -1,0 +1,338 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n11" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">应用发布历史</strong></div>
+        </div>
+        <hr>
+        <div class="am-g" id="app">
+            <div class="am-u-sm-12 am-u-md-12" style="overflow:auto;">
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="query" type="text" class="am-form-field" placeholder="应用名称" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <table class="am-table am-table-compact">
+                    <thead>
+                        <tr>
+                            <th width="10%">应用ID</th>
+                            <th width="25%">应用名称</th>
+                            <th width="15%">应用类型</th>
+                            <th width="20%">最近一次发布ID</th>
+                            <th width="20%">最近一次项目ID</th>
+                            <th width="10%">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="app in app_list">
+                            <td>${app.app_id}</td>
+                            <td>${app.app_name}</td>
+                            <td>${app.app_type}</td>
+                            <td>
+                                <span v-if="app.his_list[0].publish_id!='-1'">${app.his_list[0].publish_id}</span>
+                                <span v-else>-</span>
+                            </td>
+                            <td>
+                                <span v-if="app.his_list[0].project_id!='-1'">${app.his_list[0].project_id}</span>
+                                <span v-else>-</span>
+                            </td>
+                            <td>
+                                <a v-if="app.his_list[0].publish_id!='-1'" class="am-btn am-btn-default" href="#" @click="get_publish_history(app.app_id, app.app_name, app.app_type)">回滚</a>
+                                <span v-else>-</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="first">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="last">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block html %}
+    <div id="history">
+        <modal :show="show" v-on:close="close">
+            <span slot="header">${app_name}</span>
+            <div slot="body" style="overflow:auto">
+                <table class="am-table am-table-bordered" style="font-size:small">
+                    <thead>
+                        <tr >
+                            <th style="text-align:center">项目ID</th>
+                            <th style="text-align:center">发布ID</th>
+                            <th style="text-align:center">发布完成时间</th>
+                            <th style="text-align:center" v-if="app_type=='app'">应用包</th>
+                            <th style="text-align:center" v-if="app_type=='app'">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="line in his_list">
+                            <td>
+                                <a href="#" @click="go_project_detail(line.project_id)">${line.project_id}</a>
+                            </td>
+                            <td>${line.publish_id}</td>
+                            <td>${line.time}</td>
+                            <td v-if="app_type=='app'">
+                                <a href="#" @click="go_package('pre', line.publish_id)">预发</a><br>
+                                <a href="#" @click="go_package('prd', line.publish_id)">生产</a>
+                            </td>
+                            <td v-if="app_type=='app'">
+                                <a href="#" @click="rollback_publish('pre', line.publish_id)">预发发布(回退到这个版本)</a><br>
+                                <a href="#" @click="rollback_publish('prd', line.publish_id)">生产发布(回退到这个版本)</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </modal>
+    </div>
+
+    <div id="server">
+        <modal :show="show" v-on:close="close">
+            <span slot="header">${app_name}回退</span>
+            <table slot="body" class="am-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:center">选择</th>
+                        <th style="text-align:center">IP</th>
+                        <th style="text-align:center">端口</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="line in server_list">
+                        <td>
+                            <input type="checkbox" :value="line.res_id+':'+line.port" v-model="selected_server_list"/>
+                        </td>
+                        <td>${line.ip}</td>
+                        <td>${line.port}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <a slot="footer" class="am-modal-btn" href="#" @click="commit">确认</a>
+            <a slot="footer" class="am-modal-btn" href="#" @click="close">取消</a>
+        </modal>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+
+    data = {
+        app_list: [],
+        query: '',
+        total: 0,
+        totalPage: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1,
+    }
+
+    his_data = {
+        his_list: [],
+        app_id: "",
+        app_type: "",
+        app_name: "",
+        show: false,
+    }
+
+    var server = new Vue({
+        el: '#server',
+        data: {
+            show: false,
+            app_name: '',
+            app_id: '',
+            env: '',
+            publish_id: '',
+            server_list: [],
+            selected_server_list: []
+        },
+        methods: {
+            close: function(){
+                this.show = false
+            },
+            commit: function(){
+                this.$http.post("{{url_for('publishProfile.publish_republish')}}", {'app_id':this.app_id, 'env':this.env, 'fixed_server_list':this.selected_server_list, 'publish_id':this.publish_id}).then(
+                function(response){
+                    if(response.data.result==1){
+                        this.show=false;
+                        infoModal.msg="发起回退操作成功, 请注意查看操作进度。"
+                        infoModal.show=true;
+                        window.open("{{url_for('operationProfile.result_list')}}", '_blank');
+                    }
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            load_server: function(){
+                selected_server_list = []
+                this.$http.get("{{url_for('publishProfile.publish_arrange_query')}}", {'params': {'env': this.env, 'app_id': this.app_id, 'res_type': 'ecs'}}).then(
+                function(response){
+                    console.log(response.data)
+                    server.server_list = []
+                    if(response.data.result==1){
+                        response.data.data.forEach(function(e){
+                            server.server_list.push(e);
+                            server.selected_server_list.push(e.res_id+":"+e.port);
+                        });
+                    }
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        }
+    });
+
+    var his= new Vue({
+        el: "#history",
+        data: his_data,
+        methods:{
+            close: function(){
+                his_data.show = false
+            },
+            get_history: function(p){
+                his_data.his_list = []
+                for(i=0; i < app.app_list.length; i++){
+                    if(app.app_list[i].app_name == his_data.app_name){
+                        his_data.his_list = app.app_list[i].his_list;
+                        for(j=0; j<his_data.his_list.length; j++){
+                            if(typeof(his_data.his_list[j].time)!='string'){
+                                his_data.his_list[j].time = formatDate(his_data.his_list[j].time["$date"])
+                            }
+                        }
+                        break;
+                    }
+                }
+            },
+            go_package: function(env, publish_id){
+                window.open("https://package.zhonganonline.com/release/app/"+this.app_id+"/"+env+"/"+publish_id+"/", '_blank');
+            },
+            go_project_detail: function(project_id){
+                window.open("/project/detail/"+project_id, '_blank');
+            },
+            rollback_publish: function(env, publish_id){
+                this.show = false;
+                server.app_name = this.app_name;
+                server.app_id = this.app_id;
+                server.env = env;
+                server.publish_id = publish_id
+                server.load_server();
+                server.show = true;
+            }
+        }
+    });
+
+    var app = new Vue({
+        el: '#app',
+        data: data,
+        methods: {
+            first: function(event){
+                this.load_app_list(1);
+            },
+            go: function(event){
+                this.load_app_list(event.target.innerHTML);
+            },
+            last: function(event){
+                this.load_app_list(data.totalPage);
+            },
+            filter: function(){
+                this.load_app_list(data.now);
+            },
+            load_app_list: function(p){
+                data.now = p;
+                this.$http.get("{{url_for('publishProfile.publish_app_list__list')}}", {'params':{"p": p ,"query": data.query}, emulateJSON: true}).then(
+                function(response){
+                    console.log(response.data)
+                    data.total = response.data.data.total;
+                    paging(response.data.data.prevNum, response.data.data.nextNum, response.data.data.total, response.data.data.perPage)
+                    data.app_list = []
+                    response.data.data.appList.forEach(function(e){
+                        data.app_list.push(e);
+                    });
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            get_publish_history: function(app_id, app_name, app_type){
+                    his_data.app_id = app_id;
+                    his_data.app_name = app_name;
+                    his_data.app_type = app_type
+                    his.get_history(1)
+                    his_data.show = true
+            }
+        }
+    });
+
+    $(document).ready(function() {
+        app.load_app_list(data.now);
+    });
+
+
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.totalPage = totalPage
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+
+    function log_paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        his_data.totalPage = totalPage
+        his_data.hasPre = prevNum>0;
+        his_data.hasNext = nextNum<=totalPage;
+
+        offset = his_data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        his_data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            his_data.pagenums.push(i);
+        }
+    }
+
+    function formatDate(timestamp){
+        date = new Date(timestamp)
+        return date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
+    }
+</script>
+{% endblock %}

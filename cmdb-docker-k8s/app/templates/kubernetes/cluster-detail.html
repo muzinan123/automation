@@ -1,0 +1,216 @@
+{% extends "framework/base_with_dropdown.html" %}
+
+{% block content %}
+    <div class="admin-content-body" id="main" style="word-break:break-all;">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf">
+                <strong class="am-text-primary am-text-lg">Kubernetes</strong> / <small>Cluster</small> / <small>详情</small>
+                <a class="am-btn am-btn-danger am-fr" v-if="user_show.docker>1" title="慎点" @click="remove()">删除</a>
+            </div>
+        </div>
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12">
+                <div class="am-u-sm-12 am-u-md-4">
+                    <div class="am-panel am-panel-default">
+                        <table class="am-table">
+                            <tbody>
+                            <tr>
+                                <td colspan="2">ID</td>
+                                <td>{{base.id}}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">名称</td>
+                                <td>{{base.name}}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">公司</td>
+                                <td>{{base.org}}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">部门</td>
+                                <td>{{base.department_name}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="am-u-sm-12 am-u-md-8">
+                    <div class="am-panel am-panel-default" id="nodes-panel">
+                        <div class="am-panel-hd">
+                            <h4 class="am-panel-title" data-am-collapse="{parent: '#nodes-panel', target: '#engine-panel-bd'}">
+                                Nodes
+                                <span class="am-badge am-badge-primary am-round">数量: {{nodes|length}}</span>
+                                <span class="am-fr am-icon-chevron-down"></span>
+                            </h4>
+                        </div>
+                        <div class="am-panel-collapse am-collapse am-in" id="engine-panel-bd">
+                            <div class="am-panel-bd">
+                                <table class="am-table">
+                                    <thead><tr>
+                                        <th>ID</th>
+                                        <th>名称</th>
+                                        <th>宿主机</th>
+                                        <th>IP</th>
+                                        <th>CPU/内存</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        {% for line in nodes %}
+                                        <tr>
+                                            <td>
+                                                <a href="{{url_for('k8s_node_detail')}}?node_id={{line.id}}&org={{line.org}}">
+                                                    <div class="am-text-truncate" style="width: 100px;" >{{line.id}}</div>
+                                                </a>
+                                            </td>
+                                            <td>{{line.name}}</td>
+                                            <td>
+                                                <a href="{{config['CMDB_ALIYUN_URL']}}/aliyun/ecs/detail?ecs_id={{line.host_id}}">{{line.host_id}}</a>
+                                            </td>
+                                            <td>{{line.ip}}</td>
+                                            <td>{{line.cpu}} / {{line.memory}}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+
+
+{% endblock %}
+
+{% block html %}
+
+    <div id="errorModal">
+        <dialog v-bind:show.sync="show">
+            <span slot="header">提示</span>
+            <span slot="body">${msg}</span>
+            <span slot="footer" class="am-modal-btn" @click="close">确定</span>
+        </dialog>
+    </div>
+
+    <div id="confirmModal">
+        <dialog v-bind:show.sync="show">
+            <span slot="header">确认</span>
+            <span slot="body">${msg}</span>
+            <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+            <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        </dialog>
+    </div>
+
+    <template id="dialog">
+        <div>
+            <div class="am-modal am-modal-alert" v-bind:class="{ 'am-modal-active': show }" tabindex="-1" v-if="show" style="display:block;z-index: 1501;">
+                <div class="am-modal-dialog" style="width:350px;">
+                    <div class="am-modal-hd">
+                        <slot name="header"></slot>
+                        <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close @click="close">&times;</a>
+                    </div>
+                    <div class="am-modal-bd">
+                        <slot name="body"></slot>
+                    </div>
+                    <div class="am-modal-footer">
+                        <slot name="footer"></slot>
+                    </div>
+                </div>
+            </div>
+            <div class="am-dimmer" data-am-dimmer v-bind:class="{ 'am-active': show }" v-if="show" style="display:block;"></div>
+        </div>
+    </template>
+{% endblock %}
+
+{% block css %}
+
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+    data = {
+        user_show: user_show,
+        tag_list: [],
+        addable_tag: []
+    }
+
+    new Vue({
+        el: '#main',
+        data: data,
+        methods: {
+            remove: function(event){
+                confirmModal.msg = '确认要删除吗(不会实际影响主机上的Docker)?';
+                confirmModal.show = true;
+            }
+        }
+    });
+
+    Vue.component('dialog', {
+	    template: '#dialog',
+	    props: {
+	        show:{
+	            type: Boolean,
+	            default: false
+	        }
+	    },
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	})
+    var errorModal = new Vue({
+	    el: '#errorModal',
+	    data: {
+			show: false,
+			msg: ''
+		},
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	});
+	var confirmModal = new Vue({
+	    el: '#confirmModal',
+	    data: {
+			show: false,
+			msg: ''
+		},
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    },
+		    commit:function(){
+		        this.show = false;
+                delete_cluster();
+		    },
+	    }
+	});
+
+    $(document).ready(function() {
+
+    });
+
+    function delete_cluster(){
+        jQuery.ajax({
+            url: "{{url_for('k8s_cluster')}}",
+            data: {'id':'{{base.id}}'},
+            dataType: "json",
+            type: "DELETE",
+            timeout : timeout,
+            success: function(response) {
+                location.href="{{url_for('k8s_cluster_list')}}";
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                //call failed
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+</script>
+{% endblock %}

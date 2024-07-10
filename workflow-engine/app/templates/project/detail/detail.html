@@ -1,0 +1,923 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n0" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="am-g" style="word-break:break-all;">
+    <div class="am-tabs" data-am-tabs="{noSwipe: 1}">
+        <ul class="am-tabs-nav am-nav am-nav-tabs">
+            <li class="am-active"><a href="#tab1">项目基本信息</a></li>
+            <li><a href="#tab2"><span class="am-icon-asterisk" style="color:red;margin-right:8px;"></span>应用与配置与<span style="color:red"><strong>SQL</strong></span></a></li>
+            <li><a href="#tab4"><span class="am-icon-asterisk" style="color:red;margin-right:8px;"></span>提交测试</a></li>
+            <li><a href="#tab3">项目日志</a></li>
+        </ul>
+
+        <div class="am-tabs-bd">
+            <div class="am-tab-panel am-active" id="tab1" v-cloak>
+                {%include 'project/detail/basic.html'%}
+            </div>
+            <div class="am-tab-panel" id="tab2">
+                {%include 'project/detail/app-and-config.html'%}
+            </div>
+            <div class="am-tab-panel" id="tab3">
+                {%include 'project/detail/record.html'%}
+            </div>
+            <div class="am-tab-panel" id="tab4">
+                {%include 'project/detail/submit_test.html'%}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block html %}
+<div id="configConfirmModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">确认</span>
+        <span slot="body">${msg}</span>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="sqlConfirmModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">确认</span>
+        <div slot="body">
+            ${msg}
+            <div v-if="show_remark">
+                请填写原因<span class="am-icon-asterisk" style="color:red;margin-right:8px;"></span>：<textarea type="text" v-model="remark" style="width:300px"></textarea>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="basicConfirmModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">确认</span>
+        <span slot="body">${msg}</span>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="verifyConfirmModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">确认</span>
+        <span slot="body">${msg}</span>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="preCheckModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header"><small>预检结果确认</small></span>
+        <div slot="body" style="overflow:auto">
+            <table class="am-table am-table-compact am-table-bordered am-table-striped am-form" style="text-align:left;font-size:small">
+                <tbody>
+                    <tr>
+                        <td>发布类型</td>
+                        <td >
+                            <span v-if="precheckdata.publish_type=='regular'">常规发布</span>
+                            <span v-else>紧急发布</span>
+                        </td>
+                        <td>电子保单</td>
+                        <td>
+                            <span v-if="precheckdata.dzbd">${precheckdata.dzbd.branch_revision}</span>
+                            <span v-else>-</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SQL审核</td>
+                        <td>
+                            <span v-if="!precheckdata.sql_status">-</span>
+                            <span v-for="v, k in precheckdata.sql_status">
+                                <span v-if="k=='pre'">预发环境:</span>
+                                <span v-else-if="k=='prd'">生产环境:</span>
+                                <span v-if="v=='init'">待提交<br></span>
+                                <span v-else-if="v=='pass'">已通过<br></span>
+                                <span v-else-if="v=='not_pass'" class="am-badge am-badge-danger am-round sql_review_err">未通过<br></span>
+                                <span v-else-if="v=='success'">执行成功<br></span>
+                                <span v-else-if="v=='failed'">执行失败<br></span>
+                            </span>
+                        </td>
+                        <td>SQL执行</td>
+                        <td>
+                            <span v-if="!precheckdata.sql_execute_config">-</span>
+                            <span v-else>
+                                <span v-if="precheckdata.sql_execute_config.pre.sql_before">预发环境：发布前<br></span>
+                                <span v-else-if="precheckdata.sql_execute_config.pre.sql_after">预发环境：发布后<br></span>
+                                <span v-if="precheckdata.sql_execute_config.prd.sql_before">生产环境：发布前<br></span>
+                                <span v-else-if="precheckdata.sql_execute_config.prd.sql_after">生产环境：发布后<br></span>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Diamond修改</td>
+                        <td>
+                            <span v-if="precheckdata.diamond_before && !precheckdata.diamond_after">发布前</span>
+                            <span v-else-if="!precheckdata.diamond_before && precheckdata.diamond_after">发布后</span>
+                            <span v-else-if="precheckdata.diamond_before && precheckdata.diamond_after">发布前+后</span>
+                            <span v-else>-</span>
+                        </td>
+                        <td>是否存在重复的故障单号</td>
+                        <td>
+                            <span class="am-badge am-badge-danger am-round issue_id_err" v-if="precheckdata.issue_id_ok!=undefined && !precheckdata.issue_id_ok" >是</span>
+                            <span v-else-if="precheckdata.issue_id_ok!=undefined && precheckdata.issue_id_ok">否</span>
+                            <span v-else>-</span>
+                        </td>
+                    <tr>
+                        <td>是否存在重复的OA单号</td>
+                        <td>
+                            <span class="am-badge am-badge-danger am-round oa_id_err" v-if="precheckdata.oa_id_ok!=undefined && !precheckdata.oa_id_ok" >是</span>
+                            <span v-else-if="precheckdata.oa_id_ok!=undefined && precheckdata.oa_id_ok">否</span>
+                            <span v-else>-</span>
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+                <tbody v-for="value, key in precheckdata.app_info">
+                    <tr>
+                        <td colspan="4" style="text-align:center">
+                            ${value.name}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>ArtifactId</td>
+                        <td>${value.artifact_id}</td>
+                        <td>包后缀名</td>
+                        <td>${value.ext_name}</td>
+                    </tr>
+                    <tr>
+                        <td>提测版本号</td>
+                        <td>${value.branch_revision}</td>
+                        <td>预合并测试</td>
+                        <td>
+                            <span v-if="value.pre_merge_result">成功</span>
+                            <span v-else-if="!value.pre_merge_result" class="am-badge am-badge-danger am-round pre_merge_result_err">失败</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>是否第一次发布</td>
+                        <td>
+                            <span v-if="value.first_time">是</span>
+                            <span v-else>否</span>
+                        </td>
+                        <td>pom文件是否初始版本</td>
+                        <td>
+                            <span v-if="value.init_version_ok">是</span>
+                            <span class="am-badge am-badge-danger am-round init_version_err" v-else-if="value.first_time && value.init_version_ok==false">否</span>
+                            <span v-else>-</span>
+                        </td>
+                    </tr>
+                    <tr v-if="value.type=='app'">
+                        <td>pom文件中是否包含snapshot</td>
+                        <td>
+                            <span v-if="value.no_snapshot">不包含</span>
+                            <span v-else>包含</span>
+                        </td>
+                        <td>是否有预发SLB</td>
+                        <td>
+                            <span v-if="value.pre_has_slb">是</span>
+                            <span v-else>否</span>
+                        </td>
+                    </tr>
+                    <tr v-if="value.type=='app'">
+                        <td>是否有生产SLB</td>
+                        <td>
+                            <span v-if="value.prd_has_slb">是</span>
+                            <span v-else>否</span>
+                        </td>
+                        <td>是否有预发发布机器</td>
+                        <td>
+                            <span v-if="value.pre_has_ecs && value.pre_server_amount!=0">是</span>
+                            <span v-else-if="value.pre_server_amount==0">跳过</span>
+                            <span class="am-badge am-badge-danger am-round pre_server_err" v-else>否</span>
+                        </td>
+                    </tr>
+                    <tr v-if="value.type=='app'">
+                        <td>是否有生产发布机器</td>
+                        <td>
+                            <span v-if="value.prd_has_ecs">是</span>
+                            <span class="am-badge am-badge-danger am-round prd_server_err" v-else>否</span>
+                        </td>
+                        <td>自动化测试环境ANTX配置是否完整</td>
+                        <td>
+                            <span v-if="value.aut_antx_config!=undefined && value.aut_antx_config">是</span>
+                            <span class="am-badge am-badge-danger am-round aut_antx_config_err" v-else-if="value.aut_antx_config!=undefined && !value.aut_antx_config">否</span>
+                            <span v-else>-</span>
+                        </td>
+                    </tr>
+                    <tr v-if="value.type=='open' || value.type=='module'">
+                        <td>groupId</td>
+                        <td>
+                            <span v-if="value.group_id=='com.zhongan'">${value.group_id}</span>
+                            <span class="am-badge am-badge-danger am-round group_id_err" v-else>${value.group_id}</span>
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <span slot="footer" class="am-modal-btn" v-if="precheck_ok" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+<div id="publishModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">提交发布</span>
+        <div slot="body">
+             <table class="am-table am-table-compact am-table-striped am-form" style="text-align:left">
+                 <tr>
+                     <td width="20%">定时发布时间:</td>
+                     <td width="60%">
+                         <input type="text" class="am-form-field" id="scheduled_time" placeholder="如需要定时发布, 请选择定时发布时间"/>
+                     </td>
+                     <td width="20%"></td>
+                 </tr>
+                 <tr v-if="type=='system_fault' || type=='bug_repairs'">
+                     <td><span class="am-icon-asterisk" style="color:red;"></span>故障单号:</td>
+                     <td>
+                         <input type="text" v-model="issue_id"/>
+                     </td>
+                     <td><a href="http://regulator.zhonganonline.com/">创建故障单</a></td>
+                 </tr>
+                 <tr v-show="show_oa">
+                     <td>
+                         <span class="am-icon-asterisk" style="color:red;"></span>OA单号:
+                     </td>
+                     <td>
+                         <input type="text" v-model="oa_id"/>
+                     </td>
+                     <td></td>
+                 </tr>
+                 <tr v-show="show_oa">
+                     <td>
+                         <span class="am-icon-asterisk" style="color:red;"></span>OA单号截图:
+                     </td>
+                    <td>
+                    <div class="am-form-group am-form-file">
+                          <button id="oa_img_btn" type="button" class="am-btn am-btn-default am-btn-sm">
+                            <i class="am-icon-cloud-upload"></i> 选择要上传的文件
+                          </button>
+                          <input id="oa_img" type="file" accept="jpg,jpeg,png" v-on:change="show_oa_img"/>
+                        </div>
+                    </td>
+                    <td>
+                        <div id="show_oa_img"></div>
+                    </td>
+                 </tr>
+                 <tr>
+                     <td>发布备注:</td>
+                     <td><textarea type="text" v-model="publish_comment"></textarea></td>
+                     <td colspan="2"></td>
+                 </tr>
+             </table>
+            <input id="regular_publish_type"  name="publish_type" value="regular" type="radio" @click="disable_oa_fields">常规发布
+            <input id="urgent_publish_type" name="publish_type" value="urgent" type="radio" @click="urgent_publish">紧急发布
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="codeReviewDetailedModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">Code Review确认</span>
+        <div slot="body" style="margin-top: 10px;">
+            <div class="am-panel-hd">应用代码</div>
+            <div class="am-panel-bd">
+            <table class="am-table am-table-bordered am-table-striped am-table-compact">
+                <thead>
+                    <tr>
+                        <th>应用ID</th>
+                        <th>应用名称</th>
+                        <th>分支名称</th>
+                        <th>初始版本</th>
+                        <th>提测版本</th>
+                        <th>状态</th>
+                        <th width="15%">操作</th>
+                    </tr>
+                    <tr v-for="line in app_list">
+                        <td>${line.app_id}</td>
+                        <td>${line.app_name}</td>
+                        <td>
+                            ${line.branch}
+                        </td>
+                        <td>${line.original}</td>
+                        <td>${line.submit_test}</td>
+                        <td>
+                            <span v-if="line.submit_test != line.original">
+                                <span v-if="line.status == 'good'" class="am-badge am-round am-badge-success">通过</span>
+                                <span v-else-if="line.status == 'bad'" class="am-badge am-round am-badge-danger">未通过</span>
+                                <span v-else class="am-badge am-round am-badge-warning">未审核</span>
+                            </span>
+                            <span v-else>
+                                -
+                            </span>
+                        </td>
+                        <td>
+                            <span v-if="line.submit_test != line.original">
+                                <a href="#" @click="review(line.app_id, line.branch, line.original, line.submit_test, line.review_token)" class="am-btn am-btn-sm am-btn-success">Review</a>
+                            </span>
+                            <span v-else>
+                                -
+                            </span>
+                        </td>
+                    </tr><tr v-for="line in share_list">
+                        <td>${line.app_id}</td>
+                        <td>${line.app_name}</td>
+                        <td>
+                            ${line.branch}
+                        </td>
+                        <td>${line.original}</td>
+                        <td>${line.submit_test}</td>
+                        <td>
+                            <span v-if="line.submit_test != line.original">
+                                <span v-if="line.status == 'good'" class="am-badge am-round am-badge-success">通过</span>
+                                <span v-else-if="line.status == 'bad'" class="am-badge am-round am-badge-danger">未通过</span>
+                                <span v-else class="am-badge am-round am-badge-warning">未审核</span>
+                            </span>
+                            <span v-else>
+                                -
+                            </span>
+                        </td>
+                        <td>
+                            <span v-if="line.submit_test != line.original">
+                                <a href="#" @click="review(line.app_id, line.branch, line.original, line.submit_test, line.review_token)" class="am-btn am-btn-sm am-btn-success">Review</a>
+                            </span>
+                            <span v-else>
+                                -
+                            </span>
+                        </td>
+                    </tr>
+                </thead>
+            </table>
+            </div>
+            <div class="am-panel-hd">配置文件</div>
+            <div class="am-panel-bd">
+            <table class="am-table am-table-bordered am-table-striped am-table-compact">
+                <thead>
+                    <tr>
+                        <tr>
+                        <th>名称</th>
+                        <th>类型</th>
+                        <th>环境</th>
+                        <th v-if="need_review">状态</th>
+                        <th width="15%">操作</th>
+                    </tr>
+                    <tr v-for="line in antx_list">
+                        <td>${line.app_name}</td>
+                        <td>antx配置</td>
+                        <td>${line.env}</td>
+                        <td v-if="need_review">
+                            <span v-if="line.review_status == 'pass'" class="am-badge am-round am-badge-success">通过</span>
+                            <span v-else-if="line.review_status == 'refuse'" class="am-badge am-round am-badge-danger">未通过</span>
+                            <span v-else class="am-badge am-round am-badge-warning">未审批</span>
+                        </td>
+                        <td>
+                            <a href="#" @click="review_antx(line.app_id, line.env)" class="am-btn am-btn-sm am-btn-success">Review</a>
+                        </td>
+                    </tr>
+                    <tr v-for="line in diamond_list">
+                        <td>${line.data_id}</td>
+                        <td>diamond配置</td>
+                        <td>${line.env}</td>
+                        <td v-if="need_review">
+                            <span v-if="line.review_status == 'pass'" class="am-badge am-round am-badge-success">通过</span>
+                            <span v-else-if="line.review_status == 'refuse'" class="am-badge am-round am-badge-danger">未通过</span>
+                            <span v-else class="am-badge am-round am-badge-warning">未审批</span>
+                        </td>
+                        <td>
+                            <a href="#" @click="review_diamond(line.data_id, line.env)" class="am-btn am-btn-sm am-btn-success">Review</a>
+                        </td>
+                    </tr>
+                </thead>
+            </table>
+            </div>
+            <div v-if="status_ok || action=='reject'">${msg}</div>
+            <div v-else style="color:red;">${err_msg}</div>
+        </div>
+        <span slot="footer" v-if="status_ok || action=='reject'" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="newAppModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">选择应用</span>
+        <div slot="body">
+            <div class="am-g">
+                <div class="am-input-group am-u-sm-3">
+                    <input type="text" class="am-form-field" placeholder="按应用名称查询" v-model="query"/>
+                    <span class="am-input-group-btn">
+                        <button class="am-btn am-btn-default" type="button" @click="filterByName"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+                <div class="am-form am-u-sm-3" >
+                    <div class="am-form-group am-input-group">
+                    <select v-model="selected_company">
+                        <option v-if="company_list.length>=0" value="">请选择公司</option>
+                        <option v-if="company_list.length==0" value="">载入中</option>
+                        <option v-for="company in company_list" :value="company.value">${company.label}</option>
+                    </select>
+                    </div>
+                </div>
+                <div class="am-form am-u-sm-3">
+                    <select v-model="selected_department" width="100%">
+                        <option v-if="department_list.length>=0" value="">请选择部门</option>
+                        <option v-if="department_list.length==0" value="">载入中</option>
+                        <option v-for="department in department_list" :value="department.value">${department.label}</option>
+                    </select>
+                </div>
+                <div class="am-form am-u-sm-3" >
+                <div class="am-form-group am-input-group">
+                    <select v-model="selected_production">
+                        <option v-if="production_list.length>=0" value="">请选择产品线</option>
+                        <option v-if="production_list.length==0" value="">载入中</option>
+                        <option v-for="production in production_list" :value="production.value">${production.label}</option>
+                    </select>
+                        <span class="am-input-group-btn">
+                        <button class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+                </div>
+                <table class="am-table am-table-striped am-table-hover am-table-compact">
+                <thead>
+                <tr style="text-align:left">
+                    <th class="table-title am-hide-sm-only" style="width:5%">ID</th>
+                    <th class="table-title" style="width:17%">名称</th>
+                    <th class="table-title am-hide-sm-only">语言</th>
+                    <th class="table-title am-hide-sm-only">类型</th>
+                    <th class="table-title am-hide-sm-only">仓库地址</th>
+                    <th class="table-title">操作</th>
+                </tr>
+                </thead>
+                    <tbody>
+                    <tr v-for="line in project_list" style="text-align:left">
+                        <td class="am-hide-sm-only">${line.id}</td>
+                        <td>${line.name}</td>
+                        <td class="am-hide-sm-only">${line.language}</td>
+                        <td class="am-hide-sm-only">${line.type}</td>
+                        <td class="am-hide-sm-only">${line.vcs_full_path}</td>
+                        <td v-if="line.is_exist">
+                            <a href="#" class="am-btn am-btn-warning" v-bind:class="{'am-disabled':running}" type="button" @click="recreate(line.id, line.version, line.index, line.type)">重新拉取</a>
+                        </td>
+                        <td v-else>
+                            <a href="#" class="am-btn am-btn-success" v-bind:class="{'am-disabled':running}" type="button" @click="add(line.id, line.vcs_type, line.name, line.type, line.vcs_full_path)">添加</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="close">关闭</span>
+    </modal>
+</div>
+<div id="editAppModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">编辑应用分支</span>
+        <div slot="body">
+            <div class="am-form">
+                <div class="am-form-group">
+                    <label class="am-fl">应用</label>
+                    <input type="text" class="am-form-field" v-model="app_name" disabled="disabled"/>
+                </div>
+                <div class="am-form-group">
+                    <label class="am-fl">功能类型(仅部分应用需要配置，其它应用修改无效)</label>
+                    <select v-model="f_type">
+                        <option value="DEFAULT">默认</option>
+                        <option value="REALTIME">实时(za-jaguar专用)</option>
+                        <option value="PRESELF">预发本身(openapi-gw专用)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="edit()">保存</span>
+    </modal>
+</div>
+
+<div id="newDiamondModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header" >Diamond</span>
+        <div slot="body" >
+            <div class="am-form" v-if="!checked">
+                <div class="am-form-group">
+                    <label class="am-radio-inline">
+                        <input type="radio" value="test" v-model="env" name="env" :disabled="checked"> 测试环境
+                    </label>
+                    <label class="am-radio-inline">
+                        <input type="radio" value="pre" v-model="env" name="env" :disabled="checked"> 预发环境
+                    </label>
+                    <label class="am-radio-inline">
+                        <input type="radio" value="prd" v-model="env" name="env" :disabled="checked"> 生产环境
+                    </label>
+                    <label class="am-radio-inline">
+                        <input type="radio" value="aut" v-model="env" name="env" :disabled="checked"> 自动化测试环境
+                    </label>
+                    <div>
+                        说明: 测试环境和自动化测试环境的配置会在保存或编辑时立即生效。
+                    </div>
+                </div>
+                <div class="am-input-group" style="margin-bottom:12px;">
+                    <span class="am-input-group-label">dataId</span>
+                    <input type="text" class="am-form-field" v-model="data_id" :disabled="checked">
+                    <span class="am-input-group-btn">
+                        <a title="搜索" class="am-btn am-btn-default" :disabled="checked" @click="search"><span class="am-icon-search"></span> </a>
+                    </span>
+                    <span class="am-input-group-btn">
+                        <a title="新增" class="am-btn am-btn-default" :disabled="checked" @click="add"><span class="am-icon-plus"></span> </a>
+                    </span>
+                </div>
+            </div>
+            <div v-if="checked">
+                <span class="am-badge am-badge-secondary am-text-default">${data_id}</span>
+                <span class="am-badge am-text-default" style="margin-right:20px">${env|get_env_name}</span>
+                <hr style="margin:5px;">
+                <div class="am-form-group">
+                    <label class="am-radio-inline">
+                        <input type="radio" value="before" v-model="m_type" name="m_type" > 发布前更新
+                    </label>
+                    <label class="am-radio-inline">
+                        <input type="radio" value="after" v-model="m_type" name="m_type" > 发布后更新
+                    </label>
+                </div>
+                <textarea id="newDiamondModalContent" v-model="content" style="width:100%;" rows="10" v-show="checked" ></textarea>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit" >保存</span>
+    </modal>
+</div>
+<div id="editDiamondModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">Diamond</span>
+        <div slot="body">
+            <span class="am-badge am-badge-secondary am-text-default">${data_id}</span>
+            <span class="am-badge am-text-default" style="margin-right:20px">${env|get_env_name}</span>
+            <hr style="margin:5px;">
+            <div class="am-form-group">
+                <label class="am-radio-inline">
+                    <input type="radio" value="before" v-model="m_type" name="m_type"> 发布前更新
+                </label>
+                <label class="am-radio-inline">
+                    <input type="radio" value="after" v-model="m_type" name="m_type"> 发布后更新
+                </label>
+            </div>
+            <textarea id="editDiamondModalContent" v-model="content" style="width:100%;" rows="10" ></textarea>
+        </div>
+        <span slot="footer" class="am-modal-btn"  @click="commit">保存</span>
+    </modal>
+</div>
+<div id="showDiamondModal" style="z-index:2000;">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">Diamond</span>
+        <div slot="body" >
+            <span class="am-badge am-badge-secondary am-text-default">${data_id}</span>
+            <span class="am-badge am-text-default" style="margin-right:20px">${env|get_env_name}</span>
+            <hr style="margin:5px;">
+            <div class="am-form-group">
+                <label class="am-radio-inline">
+                    <input type="radio" value="before" v-model="m_type" name="m_type" disabled="disabled"> 发布前更新
+                </label>
+                <label class="am-radio-inline">
+                    <input type="radio" value="after" v-model="m_type" name="m_type" disabled="disabled"> 发布后更新
+                </label>
+            </div>
+            <div class="am-form-group" style="margin-top:4px;">
+                <div id="side-by-side" style="margin: 0 auto;"></div>
+            </div>
+        </div>
+        <div slot="footer" v-if="need_review && review_status == 'init'">
+            <a href="#" @click="project_diamond_review('pass')" class="am-btn am-btn-md am-btn-success">审核通过</a>
+            <a href="#" @click="project_diamond_review('refuse')" class="am-btn am-btn-md am-btn-warning">审核不通过</a>
+        </div>
+    </modal>
+</div>
+
+<div id="newAntxModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">ANTX打包配置文件</span>
+        <div slot="body" height="500" width="100%">
+            <table class="am-table am-table-bordered am-table-compact text-center" style="word-break:break-all;">
+                <thead>
+                    <tr>
+                        <th style="text-align:center" width="50%">应用名称</th>
+                        <th style="text-align:center" width="50%">环境</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="line in app_list">
+                        <td>${line.app_name}</td>
+                        <td>
+                            <div class="am-form-group">
+                                <label class="am-radio-inline">
+                                    <input v-bind:id="line.app_name+'_pre_env'" type="checkbox" value="pre" name="env" > 预发环境
+                                </label>
+                                <label class="am-radio-inline">
+                                    <input v-bind:id="line.app_name+'_prd_env'" type="checkbox" value="prd"  name="env" > 生产环境
+                                </label>
+                                <label class="am-radio-inline">
+                                    <input v-bind:id="line.app_name+'_aut_env'" type="checkbox" value="aut" name="env" > 自动化测试环境
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">保存</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+<div id="editAntxModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">ANTX打包配置文件</span>
+        <div slot="body">
+            <div class="am-form">
+                <span class="am-badge am-badge-secondary am-text-default">${app_name}.properties</span>
+                <span class="am-badge am-text-default" style="margin-right:20px">${env|get_env_name}</span>
+                <hr style="margin:5px;">
+                <div class="am-form-group">
+                    <label class="am-checkbox-inline">
+                        <input type="checkbox" v-model="kv_edit"> 格式检查
+                    </label>
+                </div>
+            </div>
+            <table class="am-table am-table-bordered am-table-compact" style="word-break:break-all;">
+                <thead>
+                    <tr>
+                        <th width="50%">文本编辑</th>
+                        <th v-if="kv_edit" width="50%" colspan="2">格式检查</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td :rowspan="content_list.length+1">
+                            <textarea id="editAntxModalcontent" v-model="content" style="margin-top:28px;line-height:34px;width:100%;resize:none;"></textarea>
+                        </td>
+                        <td v-if="kv_edit" width="15%">Key</td>
+                        <td v-if="kv_edit" width="35%">Value</td>
+                    </tr>
+                    <tr v-if="kv_edit" v-for="line in content_list">
+                        <td v-if="line.k && line.v">${line.k}</td>
+                        <td v-if="line.k && line.v">${line.v}</td>
+                        <td v-if="!line.k && line.v" class="am-danger"><i>no key</i></td>
+                        <td v-if="!line.k && line.v">${line.v}</td>
+                        <td v-if="line.k && !line.v">${line.k}</td>
+                        <td v-if="line.k && !line.v" class="am-danger"><i>no value</i></td>
+                        <td v-if="!line.k && !line.v" colspan="2"><i>white line</i></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">保存</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+<div id="showAntxModal" style="z-index:2000;">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">ANTX打包配置文件</span>
+        <div slot="body">
+            <div>
+                <span class="am-badge am-badge-secondary am-text-default">${app_name}.properties</span>
+                <span class="am-badge am-text-default" style="margin-right:20px">${env|get_env_name}</span>
+            </div>
+            <hr style="margin:5px;">
+            <table class="am-table am-table-bordered" style="word-break:break-all;">
+                <thead>
+                    <tr>
+                        <th width="5%"></th>
+                        <th width="15%">key</th>
+                        <th width="35%">修改前</th>
+                        <th width="45%" colspan="2">修改后</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="line, idx in diff_list">
+                        <td>
+                            ${idx+1}
+                        </td>
+                        <td>
+                            ${line.k}
+                        </td>
+                        <td>
+                            ${line.ov}
+                        </td>
+                        <td width="3%">
+                            <center v-if="!line.ov && line.nv">＋</center>
+                            <center v-if="line.ov && !line.nv">－</center>
+                            <center v-if="line.ov && line.nv && line.ov==line.nv">&nbsp;</center>
+                            <center v-if="line.ov && line.nv && line.ov!=line.nv">≠</center>
+                        </td>
+                        <td v-if="!line.ov && line.nv" class="am-success">
+                            ${line.nv}
+                        </td>
+                        <td v-if="line.ov && line.nv && line.ov==line.nv">
+                            ${line.nv}
+                        </td>
+                        <td v-if="line.ov && line.nv && line.ov!=line.nv" class="am-primary">
+                            ${line.nv}
+                        </td>
+                        <td v-if="line.ov && !line.nv" class="am-danger">
+                            ${line.nv}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div slot="footer" v-if="need_review && review_status == 'init'">
+            <a href="#" @click="project_antx_review('pass')" class="am-btn am-btn-md am-btn-success">审核通过</a>
+            <a href="#" @click="project_antx_review('refuse')" class="am-btn am-btn-md am-btn-warning">审核不通过</a>
+        </div>
+    </modal>
+</div>
+
+<div id="changeBadManModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">修改责任人</span>
+        <div slot="body">
+            <div class="am-form">
+                <div class="am-form-group">
+                    <label class="am-fl">回退责任人</label>
+                    <select v-model="bad_man">
+                        <option value="">请选择回退责任人</option>
+                        <option v-for="line in participant" :value="'['+line.privilege_name+']'+line.participant.real_name">${'['+line.privilege_name+']'+line.participant.real_name}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="newSQLModal">
+    <modal :show="show" v-on:close="close">
+        <span slot="header">新增SQLReview</span>
+        <div slot="body" height="500" width="100%">
+            <table class="am-table am-table-bordered am-table-compact text-center" style="word-break:break-all;">
+                <thead>
+                    <tr>
+                        <th style="text-align:center" width="50%">环境</th>
+                        <th style="text-align:center" width="50%">执行时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>预发</td>
+                        <td>
+                            <div class="am-form-group">
+                                <label class="am-radio-inline">
+                                    <input id="pre_before" type="radio" value="before" name="pre_execute_time" > 发布前
+                                </label>
+                                <label class="am-radio-inline">
+                                    <input id="pre_after" type="radio" value="after"  name="pre_execute_time" > 发布后
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>生产</td>
+                        <td>
+                            <div class="am-form-group">
+                                <label class="am-radio-inline">
+                                    <input id="prd_before" type="radio" value="before" name="prd_execute_time" > 发布前
+                                </label>
+                                <label class="am-radio-inline">
+                                    <input id="prd_after" type="radio" value="after"  name="prd_execute_time" > 发布后
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="editSQLModal">
+    <modal :show="show" v-on:close="close">
+        <span slot="header">编辑SQLReview</span>
+        <div slot="body" height="500" width="100%">
+            <table class="am-table am-table-bordered am-table-compact text-center" style="word-break:break-all;">
+                <thead>
+                    <tr>
+                        <th style="text-align:center" width="50%">环境</th>
+                        <th style="text-align:center" width="50%">执行时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>预发</td>
+                        <td>
+                            <div class="am-form-group">
+                                <label class="am-radio-inline">
+                                    <input id="edit_pre_before" type="radio" value="before" name="pre_execute_time" > 发布前
+                                </label>
+                                <label class="am-radio-inline">
+                                    <input id="edit_pre_after" type="radio" value="after"  name="pre_execute_time" > 发布后
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>生产</td>
+                        <td>
+                            <div class="am-form-group">
+                                <label class="am-radio-inline">
+                                    <input id="edit_prd_before" type="radio" value="before" name="prd_execute_time" > 发布前
+                                </label>
+                                <label class="am-radio-inline">
+                                    <input id="edit_prd_after" type="radio" value="after"  name="prd_execute_time" > 发布后
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="reviewDetailModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">SQL Review日志</span>
+        <div slot="body">
+            <span class="am-badge am-badge-secondary am-text-default">sql版本：${revision}</span>
+            <span class="am-badge am-badge-secondary am-text-default">svn地址：${sql_svn_path}</span>
+            <hr style="margin:5px;">
+            <textarea v-model="content" style="width:100%;height:500px" ></textarea>
+        </div>
+        <span slot="footer" class="am-modal-btn"  @click="close">确定</span>
+    </modal>
+</div>
+
+{% endblock %}
+
+{% block css%}
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/diff2html.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.datetimepicker-se.min.css') }}" >
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/mermaid.css') }}" />
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/diff2html.min.js') }}"></script>
+<script src="{{ url_for('static', filename='assets/js/moment.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='assets/js/amazeui.datetimepicker-se.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='assets/js/mermaidAPI.min.js') }}"></script>
+<script language="JavaScript">
+{%include 'project/detail/js/list.js'%}
+{%include 'project/detail/js/basic.js'%}
+{%include 'project/detail/js/sql.js'%}
+{%include 'project/detail/js/app.js'%}
+{%include 'project/detail/js/diamond.js'%}
+{%include 'project/detail/js/antx.js'%}
+{%include 'project/detail/js/record.js'%}
+{%include 'project/detail/js/test.js'%}
+
+$(document).ready(function() {
+    now = new Date()
+    now_date = formatDate(now)
+    $('#begin_date').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+    $('#publish_date').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+    $('#publish_date').data('DateTimePicker').minDate(now_date)
+    $('#publish_date').val('')
+
+    basic.load_project();
+    basic.load_app_company();
+    basic.load_ba_list();
+    basic.load_code_review_list();
+    basic.load_qa_list();
+    basic.load_dev_list();
+    sqlreview.load_sql_review();
+    app.load();
+    config.load();
+    record.load_record();
+
+    $('#BA').on('change', function(){
+        basic.ba_id = $('#BA').val()
+    })
+});
+
+</script>
+{% endblock %}

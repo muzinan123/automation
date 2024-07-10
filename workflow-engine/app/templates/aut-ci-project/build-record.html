@@ -1,0 +1,292 @@
+{% extends "framework/frame.html" %}
+
+{% block content %}
+    <div class="admin-content-body" id="list" v-cloak>
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf">
+                <strong class="am-text-primary am-text-lg">持续集成</strong> / <small>构建记录</small>
+            </div>
+        </div>
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12 am-u-md-12" style="overflow:auto;">
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="query" type="text" class="am-form-field" placeholder="目标、应用、参数" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <table class="am-table">
+                    <thead>
+                        <tr>
+                            <th>操作类型</th>
+                            <th>目标</th>
+                            <th>应用</th>
+                            <th width="100">操作人</th>
+                            <th width="200">时间</th>
+                            <th>详情</th>
+                            <th width="30%">进度</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="v,k in result_list">
+                            <td>
+                                ${v.type|get_operation_type}<br>
+                                (${v.type})
+                            </td>
+                            <td>${v.target}</td>
+                            <td>${v.app_name}</td>
+                            <td><span class="am-badge am-badge-secondary">${v.operator_id}</span></td>
+                            <td><span class="am-badge am-badge-default">${v.start_at}</span><span class="am-badge am-badge-default">${v.finish_at}</span></td>
+                            <td>
+                                <a href="#" @click="show_detail(k)">查看</a>
+                            </td>
+                            <td>
+                                <div class="am-progress am-progress-striped" v-if="v.status=='done'">
+                                    <div class="am-progress-bar am-progress-bar-success"  style="width: 100%">已完成</div>
+                                </div>
+                                <div class="am-progress am-progress-striped am-active" v-else-if="v.status!='done' && v.p_step_desc">
+                                    <div class="am-progress-bar am-progress-bar-secondary" :style="{width: v.p_progress+'%'}">${v.p_step_desc}</div>
+                                </div>
+                                <div class="am-progress am-progress-striped" v-else-if="v.status=='fail'">
+                                    <div class="am-progress-bar am-progress-bar-danger"  style="width: 100%">异常</div>
+                                </div>
+                                <div class="am-progress am-progress-striped" v-else>
+                                    <div class="am-progress-bar am-progress-bar-secondary"  style="width: 0%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="first">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="last">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block html %}
+    <div id="detailModal">
+        <modal :show="show" :width=1000 v-on:close="close" style="width:1000px;">
+            <span slot="header">查看操作详情</span>
+            <div slot="body">
+                <table class="am-table" style="">
+                    <tbody>
+                        <tr>
+                            <td width="10%">Id</td>
+                            <td width="40%">${id}</td>
+                            <td width="10%">类型</td>
+                            <td width="40%">${type}</td>
+                        </tr>
+                        <tr>
+                            <td>目标</td>
+                            <td>${target}</td>
+                            <td>应用</td>
+                            <td>${app_name}</td>
+                        </tr>
+                        <tr>
+                            <td>参数</td>
+                            <td>
+                                <div class="am-badge am-badge-default am-text-default">
+                                    <marquee color="#000000" scrollamount="0" behavior="alternate" direction="left" align="middle" @mouseover="mouseOver" @mouseout="mouseOut">
+                                        ${params}
+                                    </marquee>
+                                </div>
+                            </td>
+                            <td>结果</td>
+                            <td>${status}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <a class="am-icon-btn am-icon-refresh am-success am-icon-btn-sm am-fr" href="#" @click="load_detail"></a>
+                <div class="am-tabs" data-am-tabs>
+                    <ul class="am-tabs-nav am-nav am-nav-tabs">
+                        <li :class="{'am-active': idx==0}" v-for="line, idx in detail_list"><a href="" :title="line.step">${line.desc}</a></li>
+                    </ul>
+                    <div class="am-tabs-bd">
+                        <div class="am-tab-panel" :class="{'am-active': idx==0}" v-for="line, idx in detail_list">
+                            <textarea style="background-color:black;color:green;width:100%;" rows="20" readonly="readonly" wrap="off">${line.result}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <span slot="footer" class="am-modal-btn" @click="close">确定</span>
+        </modal>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/socket.io.js') }}"></script>
+<script language="JavaScript">
+
+    var detailModal = new Vue({
+        el: '#detailModal',
+        data: {
+            show: false,
+            id: '',
+            type: '',
+            target: '',
+            app_name: '',
+            params: '',
+            status: '',
+            detail_list: []
+        },
+        methods: {
+            close: function() {
+		        this.show=false;
+		    },
+            mouseOver: function(event){
+                $(event.target).attr('scrollamount', 2)
+                event.target.start();
+            },
+            mouseOut: function(event){
+                event.target.stop();
+            },
+		    load_detail: function() {
+		        this.$http.get("{{url_for('operationProfile.result_detail')}}", {params:{'operation_type':this.type, 'opid': this.id, 'r': Math.random()}, emulateJSON: true}).then(
+		        function(response){
+                    detailModal.detail_list = response.data.data;
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+		    }
+        }
+    });
+
+    data = {
+        result_list: [],
+        query: '',
+        orderby: 'start_at',
+        orderdesc: true,
+        total: 0,
+        totalPage: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1,
+        parent_version: '',
+    }
+
+    var list = new Vue({
+        el: '#list',
+        data: data,
+        methods: {
+            show_flow_chart:function () {
+                flowChart.load_details();
+            },
+            first: function(event){
+                this.load_result_list(1);
+            },
+            go: function(event){
+                this.load_result_list(event.target.innerHTML);
+            },
+            last: function(event){
+                this.load_result_list(data.totalPage);
+            },
+            filter: function(){
+                this.load_result_list(data.now);
+            },
+            show_detail: function(idx){
+                result = this.result_list[idx];
+                console.log(result);
+                detailModal.id = result.id;
+                detailModal.type = result.type;
+                detailModal.target = result.target;
+                detailModal.app_name = result.app_name;
+                detailModal.params = result.params;
+                detailModal.status = result.status;
+                detailModal.load_detail();
+                detailModal.show = true;
+            },
+            load_result_list: function(p){
+                data.now = p;
+                this.$http.get("{{url_for('operationProfile.result')}}", {'params':{"p": p ,"query": data.query, "order_by":data.orderby,"order_desc":data.orderdesc,"flow_id":"{{flow_id}}"}, emulateJSON: true}).then(
+                function(response){
+                    console.log(response.data)
+                    data.total = response.data.data.total;
+                    paging(response.data.data.prevNum, response.data.data.nextNum, response.data.data.total, response.data.data.perPage)
+                    data.result_list = response.data.data.resultList;
+                    data.result_list.forEach(function(e){
+                        if(e.start_at){
+                            e.start_at = formatDate(e.start_at["$date"])
+                        }
+                        if(e.finish_at){
+                            e.finish_at = formatDate(e.finish_at["$date"])
+                        }
+                    });
+                    list.load_progress();
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            load_progress: function(){
+                this.result_list.forEach(function(e){
+                    if(e.status=='running'){
+                        socket.emit('get_result', {opid: e.id})
+                    }
+                });
+            },
+            set_progress: function(data){
+                this.result_list.forEach(function(e){
+                    if(e.id==data.opid && e.status!='done'){
+                        if(data.progress=='100' && data.step_status=='done'){
+                            e.status='done';
+                        }
+                        e.p_progress=data.progress;
+                        e.p_step_desc=data.step_desc;
+                    }
+                });
+            }
+        }
+    });
+
+    var socket;
+
+    $(document).ready(function() {
+        list.load_result_list(data.now);
+        socket = io.connect("{{config['SERVER_URL']}}/result");
+        socket.on('result', function (data) {
+            console.log(data);
+            list.set_progress(data);
+            list.$forceUpdate();
+        });
+        socket.on('notify_new', function (d) {
+            console.log("get notify_new");
+            list.load_result_list(data.now);
+        });
+    });
+
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.totalPage = totalPage
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends "framework/frame.html" %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-fl am-cf"><strong class="am-text-primary am-text-lg">Kafka消息管理</strong></div>
+        </div>
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12" id="main">
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="query" type="text" class="am-form-field" placeholder="内容" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+
+                <table class="am-table am-table-striped am-table-hover table-main" id="user_list">
+                    <thead>
+                        <tr>
+                            <th class="table-id am-hide-sm-only">ID</th>
+                            <th class="table-title">生产时间</th>
+                            <th class="table-title">数据类型</th>
+                            <th class="table-title">分片Id</th>
+                            <th class="table-title">offset</th>
+                            <th class="table-title am-hide-sm-only">内容</th>
+                            <th class="table-title">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(line, key) in message_list">
+                            <td class="am-hide-sm-only">${line._id.$oid}</td>
+                            <td>${line.produce_at.$date}</td>
+                            <td>${line.data_type}</td>
+                            <td>${line.partition_id}</td>
+                            <td>${line.offset}</td>
+                            <td class="am-hide-sm-only">${line.data}</td>
+                            <td>
+                                <a href="#" class="am-btn am-btn-danger am-btn-xs" @click="retry(line._id.$oid, $event)">重发(${line.retry})</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="prev">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}">
+                                    <a class="paging" href="#" v-if="now!=pagenum" @click="go">${pagenum}</a>
+                                    <span class="paging" v-if="now==pagenum">${pagenum}</span>
+                                </li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="next">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+{% endblock %}
+
+{% block html %}
+    <div id="errorModal">
+        <modal v-bind:show.sync="show">
+            <span slot="header">错误</span>
+            <span slot="body">${msg}</span>
+            <span slot="footer" class="am-modal-btn" @click="close">确定</span>
+        </modal>
+    </div>
+    <template id="modal">
+        <div>
+            <div class="am-modal am-modal-alert" v-bind:class="{ 'am-modal-active': show }" tabindex="-1" v-if="show" style="display:block;z-index: 1501;">
+                <div class="am-modal-dialog" style="width:400px;">
+                    <div class="am-modal-hd">
+                        <slot name="header"></slot>
+                        <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close @click="close">&times;</a>
+                    </div>
+                    <div class="am-modal-bd">
+                        <slot name="body"></slot>
+                    </div>
+                    <div class="am-modal-footer">
+                        <slot name="footer"></slot>
+                    </div>
+                </div>
+            </div>
+            <div class="am-dimmer" data-am-dimmer v-bind:class="{ 'am-active': show }" v-if="show" style="display:block;"></div>
+        </div>
+    </template>
+{% endblock %}
+
+{% block css %}
+
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+
+    data = {
+        query: '',
+        message_list: [],
+        total: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1
+    }
+
+    new Vue({
+        el: '#main',
+        data: data,
+        methods: {
+            prev: function(event){
+                this.load_message_list(this.now*1-1);
+            },
+            go: function(event){
+                this.load_message_list(event.target.innerHTML);
+            },
+            next: function(event){
+                this.load_message_list(this.now*1+1);
+            },
+            filter: function(event){
+                this.load_message_list(1);
+            },
+            load_message_list(p){
+                data.now = p;
+                $.AMUI.progress.start();
+                this.$http.get("{{url_for('kafkaProfile.messages')}}", {'params':{"p": p ,"query": data.query, "r":Math.random()}, 'timeout':timeout}).then(
+                function(response){
+                    $.AMUI.progress.done();
+                    console.log(response);
+                    data.total = response.data.data.total;
+                    paging(response.data.data.prevNum, response.data.data.nextNum, response.data.data.total, response.data.data.perPage)
+                    data.message_list = []
+                    response.data.data.messageList.forEach(function(e){
+                        data.message_list.push(e);
+                    });
+                },function(res){
+                    console.log(res);
+                    $.AMUI.progress.done();
+                    //call failed
+                    console.log("error");
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            retry: function(message_id, event){
+                $(event.target).attr("disabled","disabled")
+                console.log(message_id);
+                this.$http.post("{{url_for('kafkaProfile.reproduce')}}", {"id": message_id}, {emulateJSON: true, 'timeout':timeout}).then(
+                function(response){
+                    $.AMUI.progress.done();
+                    console.log(response);
+                    if(response.data.result==1){
+                        this.load_message_list(data.now)
+                    }
+                },function(res){
+                    console.log(res);
+                    $.AMUI.progress.done();
+                    //call failed
+                    console.log("error");
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        },
+        created: function(){
+            this.load_message_list(data.now)
+        }
+    });
+
+    Vue.component('modal', {
+	    template: '#modal',
+	    props: {
+	        show:{
+	            type: Boolean,
+	            default: false
+	        }
+	    },
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	});
+
+	var errorModal = new Vue({
+	    el: '#errorModal',
+	    data: {
+			show: false,
+			msg: ''
+		},
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	});
+
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.totalPage = totalPage
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+
+</script>
+{% endblock %}

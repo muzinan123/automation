@@ -1,0 +1,30 @@
+            <div class="am-tab-panel am-active" id="tab3">
+                <div class="am-panel am-panel-default">
+                    <div class="am-panel-hd">
+                        项目日志
+                    </div>
+                    <table class="am-table am-table-compact am-table-striped am-panel-bd am-form">
+                        <thead>
+                            <tr>
+                                <th width="10%">执行人</th>
+                                <th width="10%">角色</th>
+                                <th>执行流程</th>
+                                <th>执行动作</th>
+                                <th width="30%">备注</th>
+                                <th>执行时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="record in record_list">
+                                <td>${record.operator}</td>
+                                <td>${record.role}</td>
+                                <td>${record.process|get_process_name}</td>
+                                <td>${record.action|get_process_status}</td>
+                                <td><div v-html="record.remark" :tag="record.id"></div></td>
+                                <td>${record.gmt_modified}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+

@@ -1,0 +1,206 @@
+                <div class="am-panel am-panel-default">
+                    <div class="am-panel-hd">
+                        项目基本信息
+                        &nbsp;&nbsp;&nbsp;
+                        <a class="am-badge am-badge-secondary am-text-lg" @click="go_jira()">跳转到Jira项目</a>
+                        &nbsp;&nbsp;&nbsp;
+                        <a class="am-badge am-badge-success am-text-lg" href="{{config['ZATEST_URL']}}/project/{{project_id}}" target="_blank">跳转到ZA-TEST项目</a>
+                    </div>
+                    <table class="am-table am-table-compact am-table-striped am-panel-bd am-form">
+                        <tr>
+                            <td width="11%">项目名称<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td width="22%">
+                                <input type="text" v-model="name" placeholder="请填写项目名称"/>
+                            </td>
+                            <td width="11%">项目别名</td>
+                            <td width="22%">
+                                <input type="text" v-model="alias"/>
+                            </td>
+                            <td width="11%">公司<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td width="22%">
+                                <select v-model="selected_company" id="company">
+                                    <option v-if="company_list.length>0" value="">请选择公司</option>
+                                    <option v-if="company_list.length==0" value="">载入中</option>
+                                    <option v-for="company in company_list" :value="company.value">${company.label}</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>部门<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td>
+                                <select v-model="selected_department" id="department">
+                                    <option v-if="department_list.length>0" value="">请选择部门</option>
+                                    <option v-if="department_list.length==0" value="">载入中</option>
+                                    <option v-for="department in department_list" :value="department.value">${department.label}</option>
+                                </select>
+                            </td>
+                            <td>应用系统</td>
+                            <td>
+                                <select v-model="selected_system" id="system">
+                                    <option v-if="system_list.length>0" value="">请选择应用系统</option>
+                                    <option v-if="system_list.length==0" value="">载入中</option>
+                                    <option v-for="system in system_list" :value="system.value">${system.label}</option>
+                                </select>
+                            </td>
+                            <td>产品模块<span class="am-icon-asterisk" style="color:red;margin-left:8px;" ></span></td>
+                            <td>
+                                <select v-model="selected_production" id="product_module">
+                                    <option v-if="production_list.length>0" value="">请选择产品模块</option>
+                                    <option v-if="production_list.length==0" value="">载入中</option>
+                                    <option v-for="production in production_list" :value="production.value">${production.label}</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>项目类型<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td>
+                                <select v-model="type" id="project_type">
+                                    <option value="">请选择项目类型</option>
+                                    <option value="code_optimization">代码优化</option>
+                                    <option value="system_fault">系统故障</option>
+                                    <option value="bug_repairs">缺陷修复</option>
+                                    <option value="requirement_change">需求变更</option>
+                                    <option value="new_product">新产品</option>
+                                    <option value="new_feature">新功能</option>
+                                    <option value="others">其他</option>
+                                </select>
+                            </td>
+                            <td>开始时间<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td>
+                                <input type="text" class="am-form-field" id="begin_date" placeholder="请选择开始时间"/>
+                            </td>
+                            <td>发布时间<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td>
+                                <input id="publish_date" type="text" placeholder="请选择发布时间"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>项目Owner<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td>
+                                <select id="Owner" data-placeholder="请选择项目Owner"  v-model="owner_id">
+                                    <option value="" >请选择项目Owner</option>
+                                    <option :value="owner.id">${owner.name}(${owner.real_name})</option>
+                                    <option v-for="user in dev_list" :value="user.id" v-if="developer.indexOf(user.id)>-1 && user.id!=owner.id">${user.name}(${user.real_name})</option>
+                                </select>
+                            </td>
+                            <td>项目BA<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td>
+                                <select id="BA" data-am-selected="{searchBox: 1,maxHeight: '400px',btnWidth: '100%'}" placeholder='请选择项目BA' v-model="ba_id">
+                                    <option value="" >请选择项目BA</option>
+                                    <option v-for="user in ba_list" :value="user.id">${user.name}(${user.real_name})</option>
+                                </select>
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                        <tr>
+                            <td>测试人员<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td colspan="5">
+                                <select id="qa" data-placeholder="请选择项目测试人员" style="height:24pt;" multiple class="chosen-select"  onchange="update_selected_users('qa')" v-model="qa">
+                                    <option v-for="user in qa_list" :value="user.id">${user.name}(${user.real_name})</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>开发人员<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td colspan="5">
+                                <select id="developer" data-placeholder="请选择项目开发人员" style="height:24pt;" multiple class="chosen-select" onchange="update_selected_users('developer')" v-model="developer">
+                                    <option v-for="user in dev_list" :value="user.id">${user.name}(${user.real_name})</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>代码评审<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td colspan="5">
+                                <select id="code_review" data-placeholder="请选择项目代码评审" style="height:24pt;" multiple class="chosen-select" onchange="update_selected_users('code_review')" v-model="code_review">
+                                    <option v-for="user in code_review_list" :value="user.id">${user.name}(${user.real_name})</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>项目概要</td>
+                            <td colspan="5">
+                                <textarea id="summary" type="text" v-model="summary"></textarea>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="am-panel-footer">
+                        <span v-if = "'{{session['userId']}}' == owner.id && !code_review_status">
+                            <a class="am-btn am-btn-primary" @click="update">更新</a>
+                            <a class="am-btn am-btn-primary" v-if="!record"  @click="del">删除</a>
+                            <a class="am-btn am-btn-primary" v-if="all_ready" @click="submit">项目提交</a>
+                            <span v-if="!all_ready"><b>项目提交前，请先填写完"项目基本信息"页和"提交测试"页的所有必填项后</b></span>
+                        </span>
+                        <span v-else-if ="'{{session['userId']}}' == owner.id && code_review_status == 1">
+                            <a class="am-btn am-btn-primary" @click="update">更新</a>
+                            <a class="am-btn am-btn-primary" @click="rollback">项目撤回</a>
+                        </span>
+                        <span v-else-if = "'{{session['userId']}}' == owner.id && test_status == 2 && publish_status == 0">
+                            <a class="am-btn am-btn-primary" @click="rollback">项目撤回</a>
+                            <a class="am-btn am-btn-primary" @click="apply_publish">申请发布</a>
+                        </span>
+                        <span v-else-if="user_show['pe'] == 2 && code_review_status>0 && publish_status == 0">
+                            <a class="am-btn am-btn-primary" @click="update">更新</a>
+                        </span>
+                        <span v-if = "qa && qa.indexOf('{{session['userId']}}') > -1 && test_status == 1">
+                            <a class="am-btn am-btn-primary" @click="rollback">项目撤回</a>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="am-panel am-panel-default">
+                    <div class="am-panel-hd">
+                        流程信息
+                        &nbsp;&nbsp;&nbsp;
+                        <span v-show="publish_status==0">(&nbsp;当前处理人
+                        <span class="am-badge am-badge-secondary" v-show="code_review_status==0">项目Owner</span>
+                        <span class="am-badge am-badge-secondary" v-show="code_review_status==0">开发</span>
+                        <span class="am-badge am-badge-secondary" v-show="code_review_status==1">代码评审</span>
+                        <span class="am-badge am-badge-secondary" v-show="sql_review_status==1">DBA</span>
+                        <span class="am-badge am-badge-secondary" v-show="test_status==1">测试人员</span>
+                        &nbsp;）</span>
+                    </div>
+                    <div class="am-panel-bd" style="overflow-x:auto;">
+                        <div id="mermaid" style="width:1024px;margin:0 auto;text-align:center;">
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="am-panel am-panel-default">
+                    <div class="am-panel-hd">
+                        审批结果
+                    </div>
+                    <table class="am-table am-table-compact am-table-striped am-form" width="100%">
+                        <tr>
+                            <td width="20%">需求审批</td>
+                            <td width="30%">
+                                <span>${demand_review_status|get_demand_review_status}</span>
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                        <tr>
+                            <td width="20%">Code Review</td>
+                            <td width="30%">
+                                <span>${code_review_status|get_review_status}</span> &nbsp&nbsp
+                                <span v-if="code_review_status == 1 && code_review && code_review.indexOf('{{session['userId']}}')>-1"><button type="button" class="am-btn am-btn-success" @click="approve('pass','code_review')">通过</button></span>
+                                <span v-if="code_review_status == 1 && code_review && code_review.indexOf('{{session['userId']}}')>-1"><button type="button" class="am-btn am-btn-warning" @click="approve('reject','code_review')">不通过</button></span>
+                            </td>
+                            <td>Data Model Review</td>
+                            <td>
+                                <span>${data_review_status|get_review_status}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>测试环境验证</td>
+                            <td>
+                                <span>${test_status|get_test_status}</span>&nbsp&nbsp
+                                <span v-if="test_status == 1 && qa && qa.indexOf('{{session['userId']}}') > -1"><button type="button" class="am-btn am-btn-success" @click="approve('pass','test_verify')">通过</button></span>
+                                <span v-if="test_status == 1 && qa && qa.indexOf('{{session['userId']}}') > -1"><button type="button" class="am-btn am-btn-warning" @click="approve('reject','test_verify')">不通过</button></span>
+                            </td>
+                            <td>发布状态</td>
+                            <td>
+                                <span>${publish_status|get_publish_status}</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>

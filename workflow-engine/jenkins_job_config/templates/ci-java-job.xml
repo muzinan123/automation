@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.17">
+    <actions>
+        <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobAction plugin="pipeline-model-definition@1.2.7"/>
+        <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction plugin="pipeline-model-definition@1.2.7">
+            <jobProperties/>
+            <triggers/>
+            <parameters/>
+        </org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction>
+    </actions>
+    <description>{{description}}</description>
+    <keepDependencies>false</keepDependencies>
+    <properties>
+        <com.synopsys.arc.jenkinsci.plugins.jobrestrictions.jobs.JobRestrictionProperty plugin="job-restrictions@0.6"/>
+    </properties>
+    <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.44">
+        <script>node('Duang'){
+        stage('Cleanup') {
+        cleanWs()
+        }
+        stage('Env') {
+        env.NAME="{{app}}"
+        env.POM_PATH="$WORKSPACE/$env.NAME"
+        env.JAVA_HOME="${tool '{{jdk_version}}'}"
+        env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
+        sh 'java -version'
+        }
+        stage('Checkout') {
+        {%if vcs_type=='git'%}
+        dir("$env.POM_PATH"){
+            checkout([$class: 'GitSCM',
+                branches: [[name: '{{branch_name}}']],
+                doGenerateSubmoduleConfigurations: false,
+                extensions: [[$class: 'CleanCheckout']],
+                userRemoteConfigs: [[credentialsId: '{{credentials_id}}',
+                url: '{{vcs_path}}.git']]
+            ])
+        }
+        {%elif vcs_type=='svn'%}
+        sh "svn co {{vcs_path}}/branch/{{branch_name}} $env.NAME"
+        {%endif%}
+        }
+        stage('Build') {
+        dir ("$env.POM_PATH") {
+        sh "mvn -U dependency:tree -Dverbose -Dautoconfig.skip -Dmaven.test.skip -DaltDeploymentRepository=snapshots::default::http://mvnrepos.zhonganonline.com/nexus/content/repositories/snapshots/ compiler:compile resources:resources jar:jar source:jar deploy:deploy"
+        }
+        }
+}</script>
+        <sandbox>true</sandbox>
+    </definition>
+    <triggers/>
+    <disabled>false</disabled>
+</flow-definition>

@@ -1,0 +1,309 @@
+{% extends "framework/frame.html" %}
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n0" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+{% block content %}
+<div class="za-doc-container">
+    <menu style="width:240px;height:100%;overflow-y:auto;margin-top:0px;padding-top:10px;padding-right:5px;position:fixed;background-color:grey;">
+        <ul class="ul2">
+            <li><a href="#n1">1.操作环境</a></li>
+            <li><a href="#n2">2.系统功能分类</a></li>
+            <li><a href="#n3">3.创建项目</a></li>
+            <li><a href="#n4">4.操作流程介绍</a>
+                <ul class="ul3">
+                    <li><a href="#n5">4.1首页</a></li>
+                    <li><a href="#n6">4.2项目列表</a></li>
+                    <li><a href="#n7">4.3 逐级查看应用 / 全部应用列表</a></li>
+                    <li><a href="#n8">4.4 最新发布</a></li>
+                    <li><a href="#n9">4.5 历史发布</a></li>
+                    <li><a href="#n10">4.6 发布统计</a></li>
+                    <li><a href="#n11">4.7 应用发布记录</a></li>
+                    <li><a href="#n12">4.8 生产 / 预发应用编排</a></li>
+                    <li><a href="#n13">4.9 操作记录查询</a></li>
+                    <li><a href="#n14">4.10 私库依赖版本查询</a></li>
+                    <li><a href="#n24">4.11 SQL审核及执行</a></li>
+                </ul>
+            </li>
+            <li><a href="#n15">5.持续集成</a>
+                <ul class="ul3">
+                    <li><a href="#n16">5.1.新增项目</a></li>
+                    <li><a href="#n17">5.2. 创建项目</a></li>
+                    <li><a href="#n18">5.3.构建</a></li>
+                    <li><a href="#n19">5.4.查看进度</a></li>
+                    <li><a href="#n20">5.5.查看构建日志</a></li>
+                </ul>
+            </li>
+            <li><a href="#n21">6.0 Code Review</a></li>
+            <li><a style="color:rgb(51, 204, 255)" href="{{url_for('static', filename='manual/DuangGuide.pdf')}}"><span class="am-icon-cloud-download am-icon-sm"></span> 操作手册下载</a></li>
+        </ul>
+    </menu>
+    <div class="za-doc-content">
+        <div id="n0"></div>
+        <h2 id="n1">1.操作环境</h2>
+        <p>新Duang环境使用地址：<a href="https://duang-engine.zhonganonline.com">https://duang-engine.zhonganonline.com/</a>    域账号登录 。</p>
+        <h2 id="n2">2.系统功能分类</h2>
+        <p>
+            <ul>
+                <li>	首页</li>
+                <li>	项目列表</li>
+                <li>	逐级查看应用</li>
+                <li>	全部应用列表</li>
+                <li>	最新发布</li>
+                <li>	历史发布</li>
+                <li>	发布统计</li>
+                <li>	应用发布记录</li>
+                <li>	生产应用编排</li>
+                <li>	预发应用编排</li>
+                <li>	操作记录查询</li>
+                <li>	私库依赖版本查询</li>
+           </ul>
+        </p>
+        <h2 id="n3">3.创建项目</h2>
+        <p>Duang发布系统项目统一由jira 创建后同步至Duang，创建成功后点击【跳转到Duang（新）项目】即可看到新创建的项目，jira创建展示如下图3.1 所示；
+            备注：新版本Duang发布上线期间会和老Duang并行一段时间。
+            地址：<a href="http://jira.zhonganonline.com ">http://jira.zhonganonline.com </a><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-1.jpg') }}"/><br/>图3.1 jira创建发布项目</div>
+        </p>
+        <h2 id="n4">4.操作流程介绍</h2>
+        <h3 id="n5">4.1首页</h3>
+        <p>概述：<br/>
+            <span class="span4">1)	首页为一个聚合点，包括Duang上项目发布的所有状态显示及查询；</span><br/>
+            <span class="span4">2)	支持各关联系统的跳转方便使用，包括 westworld、CMDB、Gayway、JIRA、ZA-TEST、IDB、viki、Keystone、Boom、<br/>
+                Gitlab、Nexus；</span><br/>
+            <span class="span4">3)	可灵活编辑发布系统更新说明及公告提示；</span><br/>
+            <span class="span4">4)	Duang发布系统的流程节点流转都会有站内信和邮件通知，站内信见系统右上角；</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-2.jpg') }}"/><br/>图4.1 首页内容展示</div><br/>
+        </p>
+        <h3 id="n6">4.2项目列表</h3>
+        <p>概述：<br/>
+            <span class="span4">项目列表中包含当前域账号相关的所有发布单， 一个项目对应一个发布单。如域账号下有多个项目会以列表的形式展示，多条项目<br/>
+                记录时可根据搜索条件进行查询，具体看下图4.2-1 。</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-3.jpg') }}"/><br/>图4.2-1 项目列表展示</div><br/>
+            <span class="span4">点击‘项目ID’可查看详情</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-4.jpg') }}"/><br/>图4.2-2 查看发布项目详情</div><br/>
+            <span class="span4">通过点击‘项目ID’跳转到项目详情页如图4.2-3 ，项目详情包括4部分内容分别是：<br/></span>
+              <span class="span4"> 1)	项目基本信息 --- 见图4.2-3 展示<br/></span>
+               <span class="span4">包括：项目基本信息补全（部分数据由jira信息带入）、流程流转状态查看、审批	结果查看；</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-5.jpg') }}" /><br/>图4.2-3 项目基本信息展示</div><br/>
+        <span class="span4">发布至预发前权限操作表格</span><br/>
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-6.jpg') }}"/><br/>发布至预发前权限操作表格</div><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-7.jpg') }}"/><br/>图4.2-3-1 审批按钮展示</div><br/>
+        <span class="span4">【申请发布】在测试验证通过后由项目owner提交，提交时可选择是否定时发布，非必填。</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-8.jpg') }}"/><br/>图4.2-3-2 申请常规发布展示</div><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-9.jpg') }}"/><br/>图4.2-3-3 申请紧急发布</div><br/>
+        <span class="span4">【申请发布】点击确认后，系统会对当前发布的项目进行预检，如果与线上代码有冲突会提示错误，owner可在上预发前进行代码<br/>合并减少预发回退次数，页面展示见图4.2-3-4。</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-10.jpg') }}"/><br/>图4.2-3-4 代码预检展示</div><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-11.jpg') }}"/><br/>图4.2-3-5 代码预检错误提示图</div><br/>
+        <span class="span4">2)	应用与配置 --- 见图4.2-4 展示</span><br/>
+        <span class="span4">首次进入【应用与配置】页面数据为空，需要用户自行添加应用和配置后才会有信	息展示，见图4.2-5 添加应用 、图 4.2-6 <br/>添加antx配置和 图4.2-7 添加	diamond	配置、图4.2.-8添加电子保单模板；</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-12.jpg') }}"/><br/>图4.2-4 应用与配置展示</div><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-13.jpg') }}"/><br/>图4.2-5 添加应用代码展示</div><br/>
+        <span class="span4">添加应用后有个【编辑】按钮，如下图4.2-5-1 此按钮现在暂时只有openapi-gw 和美洲豹使用，其他项目默认default类型不需要<br/>编辑 ，见下图4.2-5-2 展示；
+            特殊应用表格：</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-14.jpg') }}"/><br/>特殊应用表格</div><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-15.jpg') }}"/><br/>图4.2-5-1编辑应用发布类型 </div><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-16.jpg') }}"/><br/>图4.2-5-2编辑应用发布类型 </div><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-17.jpg') }}"/><br/>图4.2-6 添加antx配置展示 </div><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-18.jpg') }}"/><br/>图4.2-7 添加Diamond配置展示 </div><br/>
+        <span class="span4">添加电子保单模板根据各业务线发布项目需求申请，如不涉及电子保单模板无需拉取，操作如下图4.2-8 展示。</span><br/>
+
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-19.jpg') }}"/><br/>
+                <img src="{{ url_for('static', filename='assets/img/explain-20.jpg') }}"/><br/>图4.2-8 添加电子保单模板 </div><br/>
+        <span class="span4">3)	提交测试 ---见图4.2-9展示</span><br/>
+        <span class="span4">【提交测试】页面为开发结束并完成自测后填写，提测后测试同学方便查看本次提测内容。</span><br/>
+
+                <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-21.jpg') }}"/><br/>图4.2-9 提交测试展示  </div><br/>
+            <span class="span4">4)	项目日志 --- 见图4.2-6 展示</span><br/>
+        <span class="span4">此项操作只有在开发点击【提交项目】后才会有日志信息产生，可查看提交后的每个节点流转详细信息。</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-22.jpg') }}"/><br/>图4.2-10 项目日志展示</div><br/>
+        </p>
+        <h3 id="n7">4.3 逐级查看应用 / 全部应用列表</h3>
+        <p>导航栏【逐步查看应用】和【全部应用列表】两项为CMDB 查看应用资源归属信息引导栏，具体如下图4.3-1 和 图4.3-2 、图4.3-3 展示。<br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-23.jpg') }}"/><br/>图4.3-1 逐步查看应用和全部应用列表导航展示</div><br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-24.jpg') }}"/><br/>图4.3-2 点击【逐步查看应用】跳转页面</div><br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-25.jpg') }}"/><br/>图4.3-3 点击【全部应用列表】跳转页面</div><br/>
+        </p>
+        <h3 id="n8">4.4 最新发布</h3>
+        <p>概述：<br/>
+            <span class="span4">1、最新发布可查看当天所有发布项目记录；</span><br/>
+            <span class="span4">2、项目owner可在最新发布查看自己发布项目的状态；</span><br/>
+            <span class="span4">3、发布过程中按钮操作权限说明表：</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-26.jpg') }}" /><br/>操作权限说明表</div><br/>
+        <span class="span4">【最新发布】可查看当前项目发布状态，如下图4.4-1：</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-27.jpg') }}"/><br/>图4.4-1 最新发布展示</div><br/>
+        <span class="span4">当项目在预发发布出错时，可点击‘单号’进行查看，如下图4.4-2：</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-28.jpg') }}"/><br/>图4.4-2 项目发布出错展示</div><br/>
+        <span class="span4">点击单号来到发布单详情页面，可查看每次发布记录包含异常和已完成信息，如下图4.4-3：</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-29.jpg') }}"/><br/>图4.4-3 报错日志查看展示</div><br/>
+        <span class="span4">点击红色框区域信息可查看不同发布信息，如下图：4.4-4：</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-30.jpg') }}"/><br/>图4.4-4 具体日志排查展示</div><br/>
+        <span class="span4">	如预发环境有相同项目在发布，需在待预发等待，如下图4.4-5；</span><br/>
+        <span class="span4">	测试在预发点击‘验证回退’后，待预发会看到‘废弃’显示。此废弃为回退到测试环境项目owner可修改代码后再次申请发布至预发，<br/>如下图4.4-5：</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-31.jpg') }}"/><br/>图4.4-5 待预发展示</div><br/>
+        <span class="span4">	预发状态为‘待测试验证’状态时，验证回退需选择原因，如下图4.4-6 和 图4.4-7：</span><br/>
+
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-32.jpg') }}"/><br/>图4.4-6 预发发布成功‘待测试验证’状态</div><br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-33.jpg') }}"/><br/>图4.4-7 选择回退原因</div><br/>
+        <span class="span4">	预发回退后可在‘项目列表’的‘项目日志中’查看到回退责任人信息，如果要修改责任人信息必须是执行人才有权限，如下图4.4-8：</span><br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-34.jpg') }}"/><br/>图4.4-8 查看和修改回退责任人</div><br/>
+        <span class="span4">	【应用排序】功能可在多处操作调整：</span><br/>
+        <span class="span4">1、‘应用与配置’拉取分支后可调整应用顺序，见图4.4-9；</span><br/>
+        <span class="span4">2、‘待预发’、‘预发’、‘待生产’3个环境owner也可编辑应用排序，编辑应用排序时项目必须为未发布状态，如项目已开始打包则不可<br/>再编辑，见图4.4-10；</span><br/>
+        <span class="span4">3、多类型代码分支，根据应用类型分类进行排序，比如：APP应用、java应用各自分开排序；</span><br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-35.jpg') }}"/><br/>图4.4-9 应用与配置排序操作</div><br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-36.jpg') }}"/><br/>图4.4-10 应用排序操作</div><br/>
+        </p>
+        <h3 id="n9">4.5 历史发布</h3>
+        <p>【历史发布】为查看已经发布完成的项目记录，页面展示效果见图4.5。<br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-37.jpg') }}"/><br/>图4.5 历史发布展示</div><br/>
+        </p>
+        <h3 id="n10">4.6 发布统计</h3>
+        <p>暂时沿用老Duang，后续有人力再开发。<br/></p>
+        <h3 id="n11">4.7 应用发布记录</h3>
+        <p>概述：<br/>
+            <span class="span4">【应用发布记录】功能权限只开放给PE，每个应用发布完成后都会记录一个版本，如发布想回退上一个版本可由PE 回滚。</span><br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-38.jpg') }}"/><br/>图4.7 应用发布历史展示</div><br/>
+        </p>
+        <h3 id="n12">4.8 生产 / 预发应用编排</h3>
+        <p>概述：<br/>
+            <span class="span4">应用编排分生产和预发两个环境显示，如下图4.8-1：</span><br/>
+           <span class="span4">1、生产编排用户有同步当天日志权限，无重启权限如下图4.8-2；</span><br/>
+           <span class="span4">2、预发编排用户有查看权限，无重启权限如下图4.8-3；</span><br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-39.jpg') }}"/><br/>图4.8-1 生产、预发应用编排导航栏</div><br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-40.jpg') }}"/><br/>图4.8-2 生产应用编排展示</div><br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-41.jpg') }}"/><br/>图4.8-3 预发应用编排展示</div><br/>
+        </p>
+        <h3 id="n13">4.9 操作记录查询</h3>
+        <p>
+            图4.9 操作记录查询<br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-42.jpg') }}"/><br/>图4.9 操作记录查询</div><br/>
+        </p>
+        <h3 id="n14">4.10 私库依赖版本查询</h3>
+        <p>
+            【私库依赖版本查询】可查看当前应用最新版本信息，‘手工调整版本’权限未开放，如需修改为最新版本请邮件联系PE core@zhongan.com  ，如下图4.10：<br/>
+
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-43.jpg') }}"/><br/>图4.10私库依赖版本查询</div><br/>
+        </p>
+        <h3 id="n24">4.11 SQL审核及执行</h3>
+        <p>
+            【SQL审核及执行】在项目详情页的应用与配置与SQL页面中，可以添加SQL，如图4.11-1, 添加成功后，在如图4.11-2查看SQL脚本的相关信息，
+            用户需要向列表所示的SVN地址上传SQL脚本（目前只支持预发<br/>和生产环境的部分数据库的SQL自动审核和执行， 自动化测试环境只支持人工审核和执行），
+            上传完毕后提交项目，预发和生产环境的SQL脚本将被自动审核，对于不支持自动审核的脚本，DBA会进行人工审核, <br/>如图4.11-3， SQL审核失败后，项目owner可以到项目日志页查看原因，
+                如图4.11-4和4.11-5， 然后更新和上传脚本，再提交审核， 如图4.11-6， 若对审核结果有任何疑问，可以咨询DBA。<br/>
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-52.jpg') }}"/><br/>图4.11-1 添加SQL</div><br/>
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-53.jpg') }}"/><br/>图4.11-2</div><br/>
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-54.jpg') }}"/><br/>图4.11-3</div><br/>
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-55.jpg') }}"/><br/>图4.11-4</div><br/>
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-56.jpg') }}"/><br/>图4.11-5</div><br/>
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-57.jpg') }}"/><br/>图4.11-6</div><br/>
+        </p>
+        <p>
+            SQL审核通过后， 支持自动执行的脚本将在发布过程中自动执行，若是人工审核的脚本，DBA会手动执行。 如图4.11-7所示SQL执行成功的结果。<br/>
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-60.jpg') }}"/><br/>图4.11-7</div><br/>
+        </p>
+        <p>
+            如果脚本自动执行失败， 项目owner会收到邮件提醒，并需要前往发布详情页查看失败原因，如图4.11-8。<br/>
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-58.jpg') }}"/><br/>图4.11-8</div><br/>
+        </p>
+        <p>
+            如果SQL脚本有问题，则需要更新脚本并重新上传，然后在项目详情页提交审核，如图4.11-9。 审核通过后，在最新发布页点击执行SQL重新执行，如图4.11-10。若提示流程操作失败，<br/>
+            说明审核未通过或者该操作已转为人工执行，此时请联系DBA。<br/>
+            <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-57.jpg') }}"/><br/>图4.11-9</div><br/>
+        <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-59.jpg') }}"/><br/>图4.11-10</div><br/>
+        </p>
+        <h2 id="n15">5.0 持续集成</h2>
+        <h3 id="n16">5.1.新增项目，如图5.0-1:</h3>
+        <p>
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-44.jpg') }}"/><br/>图5.0-1新增项目</div><br/>
+            <div style="text-align: center;font-weight: bold">注意：只能看到自己的项目，如果想看别人的项目申请右上角的 “申请权限”，走westworld审批流程</div>
+        </p>
+        <h3 id="n17">2. 创建项目</h3>
+        <p>
+        分支选择已经提交的分支，并选择JDK编译环境，如图5.0-2<br/>
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-45.jpg') }}"/><br/>图5.0-2创建项目</div><br/>
+            模板POM格式，如图5.0-3<br/>
+        <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-46.jpg') }}"/><br/>图5.0-3 模板POM格式</div><br/>
+        <div style="text-align: center;font-weight: bold">注意：Share项目pom中版本号格式为 X.X.X-SNAPSHOT，构建时候会读取pom的版本号，version一定要带有SNAPSHOT，version一定要带有SNAPSHOT，version一定要带有SNAPSHOT，重要的事情说三遍。</div>
+        </p>
+        <h3 id="n18">3.构建，图5.0-4</h3>
+        <p>
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-47.jpg') }}"/><br/>图5.0-4 构建</div><br/>
+        </p>
+        <h3 id="n19">4.查看进度，图5.0-5</h3>
+        <p>
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-48.jpg') }}"/><br/>图5.0-5 查看进度</div><br/>
+        </p>
+        <h3 id="n20">5.查看构建日志，图5.0-6</h3>
+        <p>
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-49.jpg') }}"/><br/>图5.0-6 查看构建日志</div><br/>
+        </p>
+        <h3 id="n21">6.0 Code Review</h3>
+        <h3 id="n22">1.代码审核, 图6.0-1</h3>
+        <p>
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-50.jpg') }}"/><br/>图6.0-1 代码审核</div><br/>
+        </p>
+        <h3 id="n25">2.对比代码改动差异，图6.0-2红色代表删除的行，绿色代表增加的行</h3>
+        <p>
+           <div class="centers"><img src="{{ url_for('static', filename='assets/img/explain-51.jpg') }}"/><br/>图6.0-2 对比代码改动差异</div><br/>
+        </p>
+    </div>
+    <!-- 返回顶部 -->
+    <div class="am-gotop am-gotop-default footer">
+        <a href="#n0" title="回到顶部" style="float: right;">
+            <span class="am-gotop-title">回到顶部</span>
+            <i class="am-gotop-icon am-icon-chevron-up"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block html %}
+{% endblock %}
+
+{% block css%}
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/explain.css') }}" >
+{% endblock %}
+

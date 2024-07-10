@@ -1,0 +1,44 @@
+                <div class="am-panel am-panel-default">
+                    <div class="am-panel-hd">
+                    </div>
+                    <table class="am-table am-table-compact am-table-striped am-form" >
+                        <tr>
+                            <td width="10%">需求说明</td>
+                            <td width="40%">
+                                <textarea rows="3" id="request" v-model="request" type="text" placeholder="需提供需求文档位置或需求说明"></textarea>
+                            </td>
+                            <td width="10%">接口说明</td>
+                            <td>
+                                <textarea rows="3" id="api" v-model="api" type="text" placeholder="需提供接口文档位置或接口说明"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>冒烟用例</td>
+                            <td>
+                                <textarea rows="3" id="smoke" v-model="smoke" type="text" placeholder="研发人员冒烟测试用例位置以及通过率等"></textarea>
+                            </td>
+                            <td>测试重点<span class="am-icon-asterisk" style="color:red;margin-left:8px;" ></span></td>
+                            <td>
+                                <textarea rows="3" id="keynote" v-model="keynote" type="text" placeholder="本次需求涉及到的测试范围以及重点（尽可能详细）"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>自测结果(开发人员提供自测截图、文档等)<span class="am-icon-asterisk" style="color:red;margin-left:8px;"></span></td>
+                            <td>
+                                <div class="am-form-group am-form-file">
+                                    <button id="test_result_btn" type="button" class="am-btn am-btn-default am-btn-sm">
+                                        <i class="am-icon-cloud-upload"></i> 选择要上传的文件
+                                    </button>
+                                    <input id="test_file" type="file" accept=".jpg, .jpeg, .png, .txt, .doc, .xls, .xlsx" v-on:change="show_test_file"/>
+                                    <div id="show_test_file">
+                                    </div>
+                                </div>
+                                <a v-if="test_file" v-bind:href="'/project/test/download/' + test_file" class="am-badge am-badge-danger"><h3 style="font-size:2em;margin-bottom:0px;">${test_file}</h3></a>
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </table>
+                    <div class="am-panel-footer">
+                        <a v-if='!submit' class="am-btn am-btn-primary" @click="save">保存</a>
+                    </div>
+                </div>

@@ -1,0 +1,474 @@
+{% extends "framework/frame.html" %}
+
+{% block content %}
+
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-fl am-cf"><strong class="am-text-primary am-text-lg">用户与权限</strong> / <small>权限</small></div>
+        </div>
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12">
+                <div class="am-tabs" data-am-tabs="{noSwipe: 1}" id="main">
+                    <ul class="am-tabs-nav am-nav am-nav-tabs">
+                        <li class="am-active"><a href="#tab1">角色</a></li>
+                        <li><a href="#tab2">权限</a></li>
+                        <li><a href="#tab3">角色与权限</a></li>
+                    </ul>
+                    <div class="am-tabs-bd">
+                        <div class="am-tab-panel am-active" id="tab1">
+                            <div class="am-btn-group am-btn-group-xs">
+                                <button class="am-btn am-btn-default am-btn" @click="new_role">新建角色</button>
+                            </div>
+                            <table class="am-table am-table-bordered am-table-radius am-table-striped am-table-centered">
+                                <thead>
+                                    <tr>
+                                        <th class="table-id am-hide-sm-only">ID</th>
+                                        <th class="table-title">角色名称</th>
+                                        <th class="table-title">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="line in role_list">
+                                        <td class="am-hide-sm-only">${line.id}</td>
+                                        <td><a href="#" @click="load_rp_list(line.id, line.alias)">${line.alias}</a></td>
+                                        <td>
+                                            <div class="am-btn-group am-btn-group-xs">
+                                                <a class="am-btn am-btn-default am-btn-xs am-text-secondary" href="#" @click="edis_role(line.id, line.name, line.alias)"><span class="am-icon-pencil-square-o am-icon-fw"></span> 编辑</a>
+                                                <a class="am-btn am-btn-default am-btn-xs am-text-danger" href="#" @click="del_role(line.id)"><span class="am-icon-trash-o am-icon-fw"></span> 删除</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="am-tab-panel am-active" id="tab2">
+                            <div class="am-btn-group am-btn-group-xs">
+                                <button class="am-btn am-btn-default am-btn" @click="new_privilege">新建权限</button>
+                            </div>
+                            <table class="am-table am-table-bordered am-table-radius am-table-striped am-table-centered">
+                                <thead>
+                                    <tr>
+                                        <th class="table-id am-hide-sm-only">ID</th>
+                                        <th class="table-title">权限名称</th>
+                                        <th class="table-title">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="line in privilege_list">
+                                        <td class="am-hide-sm-only">${line.id}</td>
+                                        <td>${line.alias}</td>
+                                        <td>
+                                            <div class="am-btn-group am-btn-group-xs">
+                                                <a class="am-btn am-btn-default am-btn-xs am-text-secondary" href="#" @click="edis_privilege(line.id, line.name, line.alias)"><span class="am-icon-pencil-square-o am-icon-fw"></span> 编辑</a>
+                                                <a class="am-btn am-btn-default am-btn-xs am-text-danger" href="#" @click="del_privilege(line.id)"><span class="am-icon-trash-o am-icon-fw"></span> 删除</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="am-tab-panel am-active" id="tab3">
+                            <div v-if="!selected_role_alias">
+                                <br>
+                                请先选择角色...
+                                <br>
+                                <br>
+                            </div>
+                            <div v-else>
+                                <h3>角色[${selected_role_alias}]的权限:</h3>
+                                <table class="am-table am-table-bordered am-table-radius am-table-striped am-table-centered" id="rp_list">
+                                    <thead>
+                                        <tr>
+                                            <th class="table-title">权限名称</th>
+                                            <th class="table-title">权限</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="line in rp_list">
+                                            <td class="privilege-alias">${line.privilege_alias}</td>
+                                            <td>
+                                                <a class="am-btn am-btn-default am-btn-xs btn-read" href="#" @click="change_role_privilege(line.privilege_id, line.rw, true, false, line.role_alias)">
+                                                    <span class="am-icon-check-square-o am-icon-fw" v-if="line.rw>=1"></span>
+                                                    <span class="am-icon-square-o am-icon-fw" v-else></span>
+                                                    读
+                                                </a>
+                                                <a class="am-btn am-btn-default am-btn-xs btn-write" href="#" @click="change_role_privilege(line.privilege_id, line.rw, false, true, line.role_alias)">
+                                                    <span class="am-icon-check-square-o am-icon-fw" v-if="line.rw==2"></span>
+                                                    <span class="am-icon-square-o am-icon-fw" v-else></span>
+                                                    写
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+
+{% endblock %}
+{% block html %}
+
+<div id="confirmModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">确认</span>
+        <span slot="body" v-html="msg"></span>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="createRoleModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">创建角色</span>
+        <div slot="body">
+            <div class="am-form">
+                <div class="am-form-group">
+                    <input type="text" v-model="name" minlength="3" placeholder="输入角色识别名" required/>
+                </div>
+                <div class="am-form-group">
+                    <input type="text" v-model="alias" minlength="3" placeholder="输入角色名称" required/>
+                </div>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="createPrivilegeModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">创建权限</span>
+        <div slot="body">
+            <div class="am-form">
+                <div class="am-form-group">
+                    <input type="text" v-model="name" minlength="3" placeholder="输入权限识别名" required/>
+                </div>
+                <div class="am-form-group">
+                    <input type="text" v-model="alias" minlength="3" placeholder="输入权限名称" required/>
+                </div>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="editRoleModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">编辑角色</span>
+        <div slot="body">
+            <div class="am-form">
+                <div class="am-form-group">
+                    <input type="text" v-model="name" minlength="3" required disabled="disabled"/>
+                </div>
+                <div class="am-form-group">
+                    <input type="text" v-model="alias" minlength="3" placeholder="输入角色名称" required/>
+                </div>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+<div id="editPrivilegeModal">
+    <modal :show="show" :width="width" v-on:close="close">
+        <span slot="header">编辑权限</span>
+        <div slot="body">
+            <div class="am-form">
+                <div class="am-form-group">
+                    <input type="text" v-model="name" minlength="3" required disabled="disabled"/>
+                </div>
+                <div class="am-form-group">
+                    <input type="text" v-model="alias" minlength="3" placeholder="输入权限名称" required/>
+                </div>
+            </div>
+        </div>
+        <span slot="footer" class="am-modal-btn" @click="commit">确定</span>
+        <span slot="footer" class="am-modal-btn" @click="close">取消</span>
+    </modal>
+</div>
+
+{% endblock %}
+
+{% block css %}
+
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+
+    var confirmModal = new Vue({
+        el: '#confirmModal',
+        data: {
+            show: false,
+            width: 500,
+            msg: '',
+            action: '',
+            target: ''
+        },
+        methods: {
+            close: function() {
+                this.show=false;
+            },
+            commit: function() {
+                this.show=false;
+                if(this.action=='del_role'){
+                    this.$http.delete("{{url_for('baseProfile.admin_role__role')}}", {params:{'id':this.target}, emulateJSON: true}).then(
+                    function(response){
+                        main.load_role_list(this.target);
+                    },
+                    function(res){
+                        errorModal.msg='网络连接异常，请稍后重试。';
+                        errorModal.show=true;
+                    })
+                }else if(this.action=='del_privilege'){
+                    this.$http.delete("{{url_for('baseProfile.admin_role__privilege')}}", {params:{'id':this.target}, emulateJSON: true}).then(
+                    function(response){
+                        main.load_privilege_list(this.target);
+                    },
+                    function(res){
+                        errorModal.msg='网络连接异常，请稍后重试。';
+                        errorModal.show=true;
+                    })
+                }
+            }
+        }
+    });
+
+    var createRoleModal = new Vue({
+        el: '#createRoleModal',
+        data: {
+            show: false,
+            width: 500,
+            name: '',
+            alias: ''
+        },
+        methods: {
+            close: function() {
+                this.show=false;
+            },
+            commit: function() {
+                this.show=false;
+                this.$http.put("{{url_for('baseProfile.admin_role__role')}}", {'name':this.name, 'alias':this.alias}, {emulateJSON: true}).then(
+                function(response){
+                    main.load_role_list(this.target);
+                },
+                function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        }
+    })
+
+    var createPrivilegeModal = new Vue({
+        el: '#createPrivilegeModal',
+        data: {
+            show: false,
+            width: 500,
+            name: '',
+            alias: ''
+        },
+        methods: {
+            close: function() {
+                this.show=false;
+            },
+            commit: function() {
+                this.show=false;
+                this.$http.put("{{url_for('baseProfile.admin_role__privilege')}}", {'name':this.name, 'alias':this.alias}, {emulateJSON: true}).then(
+                function(response){
+                    main.load_privilege_list(this.target);
+                },
+                function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        }
+    })
+
+    var editRoleModal = new Vue({
+        el: '#editRoleModal',
+        data: {
+            show: false,
+            width: 500,
+            id: '',
+            name: '',
+            alias: ''
+        },
+        methods: {
+            close: function() {
+                this.show=false;
+            },
+            commit: function() {
+                this.show=false;
+                this.$http.post("{{url_for('baseProfile.admin_role__role')}}", {'id':this.id, 'alias':this.alias}, {emulateJSON: true}).then(
+                function(response){
+                    main.load_role_list(this.target);
+                },
+                function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        }
+    })
+
+    var editPrivilegeModal = new Vue({
+        el: '#editPrivilegeModal',
+        data: {
+            show: false,
+            width: 500,
+            id: '',
+            name: '',
+            alias: ''
+        },
+        methods: {
+            close: function() {
+                this.show=false;
+            },
+            commit: function() {
+                this.show=false;
+                this.$http.post("{{url_for('baseProfile.admin_role__privilege')}}", {'id':this.id, 'alias':this.alias}, {emulateJSON: true}).then(
+                function(response){
+                    main.load_privilege_list(this.target);
+                },
+                function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        }
+    })
+
+    var main = new Vue({
+        el: '#main',
+        data: {
+            role_list: [],
+            privilege_list: [],
+            rp_list: [],
+            selected_role_id: '',
+            selected_role_alias: ''
+        },
+        methods: {
+            new_role: function(){
+                createRoleModal.show=true;
+                createRoleModal.name='';
+                createRoleModal.alias='';
+            },
+            new_privilege: function(){
+                createPrivilegeModal.show=true;
+                createPrivilegeModal.name='';
+                createPrivilegeModal.alias='';
+            },
+            edis_role: function(id, name, alias){
+                editRoleModal.show=true;
+                editRoleModal.id=id;
+                editRoleModal.name=name;
+                editRoleModal.alias=alias;
+            },
+            edis_privilege: function(id, name, alias){
+                editPrivilegeModal.show=true;
+                editPrivilegeModal.id=id;
+                editPrivilegeModal.name=name;
+                editPrivilegeModal.alias=alias;
+            },
+            del_role: function(id){
+                confirmModal.show=true;
+                confirmModal.msg='确定删除角色吗?';
+                confirmModal.target=id;
+                confirmModal.action='del_role';
+            },
+            del_privilege: function(id){
+                confirmModal.show=true;
+                confirmModal.msg='确定删除权限吗?';
+                confirmModal.target=id;
+                confirmModal.action='del_privilege';
+            },
+            change_role_privilege: function(privilege_id, rw, read, write, role_alias){
+                if(read && rw>=1){
+                    read = 0;
+                    write = 0;
+                }else if(read && rw==0){
+                    read = 1;
+                    write = 0;
+                }else if(write && rw==2){
+                    read = 1;
+                    write = 0;
+                }else if(write && rw<=1){
+                    read = 1;
+                    write = 1;
+                }
+                jQuery.ajax({
+                    url: "{{url_for('baseProfile.admin_role__privilege')}}",
+                    dataType: "json",
+                    data: {"roleId": main.selected_role_id, "privilegeId":privilege_id, "read":read, "write":write, "r":Math.random()},
+                    type: "LINK",
+                    timeout : timeout,
+                    success: function(response) {
+                        $.AMUI.progress.done();
+                        main.load_rp_list(main.selected_role_id, role_alias);
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        $.AMUI.progress.done();
+                        //call failed
+                        $("#error_msg").html("网络连接异常，请稍后重试。");
+                        $("#errorModal").modal("toggle");
+                    }
+                });
+            },
+            load_role_list: function(){
+                this.$http.get("{{url_for('baseProfile.admin_role__role')}}").then(
+                function(response){
+                    main.role_list=response.data.data;
+                },
+                function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            load_privilege_list: function(){
+                this.$http.get("{{url_for('baseProfile.admin_role__privilege')}}").then(
+                function(response){
+                    main.privilege_list=response.data.data;
+                },
+                function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            load_rp_list: function(role_id, role_alias){
+                main.selected_role_id = role_id;
+                main.selected_role_alias = role_alias;
+                this.$http.get("{{url_for('baseProfile.admin_role__privilege')}}", {'params':{"roleId":role_id, "r":Math.random()}}).then(
+                function(response){
+                    $("#main").tabs('open',2);
+                    main.rp_list=response.data.data;
+                },
+                function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+        }
+    })
+
+    $(document).ready(function() {
+
+        //手工展开对应的主菜单
+        $("#sub-menu-user").collapse('open');
+
+        main.load_role_list();
+        main.load_privilege_list();
+
+    });
+</script>
+{% endblock %}

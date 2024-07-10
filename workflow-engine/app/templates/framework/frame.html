@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html  class="no-js fixed-layout">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="">
+<meta name="keywords" content="">
+<meta name="viewport"
+content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>发布引擎</title>
+
+<!-- Set render engine for 360 browser -->
+<meta name="renderer" content="webkit">
+
+<!-- No Baidu Siteapp-->
+<meta http-equiv="Cache-Control" content="no-siteapp"/>
+
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/i/favicon.png') }}">
+
+<!-- Add to homescreen for Chrome on Android -->
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" sizes="192x192" href="{{ url_for('static', filename='assets/i/app-icon72x72@2x.png') }}">
+
+<!-- Add to homescreen for Safari on iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Amaze UI"/>
+<link rel="apple-touch-icon-precomposed" href="{{ url_for('static', filename='assets/i/app-icon72x72@2x.png') }}">
+
+<!-- Tile icon for Win8 (144x144 + tile color) -->
+<meta name="msapplication-TileImage" content="{{ url_for('static', filename='assets/i/app-icon72x72@2x.png') }}">
+<meta name="msapplication-TileColor" content="#0e90d2">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.chosen.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/app.css') }}?version=20180423">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/admin.css') }}">
+
+
+<!--[if (gte IE 9)|!(IE)]><!-->
+<script src="{{ url_for('static', filename='assets/js/jquery.min.js') }}"></script>
+<!--<![endif]-->
+<!--[if lte IE 8 ]>
+<script src="http://libs.baidu.com/jquery/1.11.1/jquery.min.js"></script>
+<![endif]-->
+<script language="javascript" src="{{ url_for('static', filename='assets/js/vue.js') }}"></script>
+
+<script language="javascript" src="{{ url_for('static', filename='assets/js/vue-resource.js') }}"></script>
+
+<script src="{{ url_for('static', filename='assets/js/amazeui.min.js') }}"></script>
+<script src="{{ url_for('static', filename='assets/js/amazeui.chosen.js') }}"></script>
+
+<script src="{{ url_for('static', filename='assets/js/app.js') }}?version=20180824"></script>
+
+</head>
+<body>
+
+<!--在这里编写你的代码-->
+    <header id="head-line" class="am-topbar am-topbar-inverse admin-header" style="margin-left:80px;background-color:#223F66;border-color:#223F66">
+        <div class="">
+            <ul class="am-nav am-nav-pills am-topbar-nav am-topbar-right admin-header-list">
+                <li>
+                    {% block manual %}
+                    {% endblock %}
+                </li>
+
+                <li v-if="has_unreaded">
+                    <a href="{{url_for('baseProfile.notification_list')}}" class="am-btn">
+                        <span class="am-header-nav-title">
+                            <span class="am-icon-envelope"></span> ${n}
+                        </span>
+                    </a>
+                </li>
+                <li v-if="!has_unreaded">
+                    <a href="{{url_for('baseProfile.notification_list')}}" class="am-btn">
+                        <i class="am-header-icon am-icon-envelope"></i>
+                        <span class="am-header-nav-title">
+                            通知
+                        </span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{url_for('baseProfile.user_center')}}" class="am-btn">
+                        <i class="am-header-icon am-icon-user"></i>
+                        <span class="am-header-nav-title">
+                            {{session['userInfo']['real_name']}}
+                        </span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{url_for('baseProfile.logout')}}" class="am-btn">
+                        <i class="am-header-icon am-icon-power-off"></i>
+                        <span class="am-header-nav-title">
+                            退出
+                        </span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </header>
+
+    <div id="menu">
+        <div id="project_dropdown_menu" class="dropdown_menu" style="margin-top:100px;display:none;">
+            <div class="item"><a href="{{ url_for('projectProfile.todo_list') }}" class="am-cf"><small> 待办列表</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{ url_for('projectProfile.project') }}" class="am-cf"><small> 项目列表</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{ url_for('ciProjectProfile.ci_project_list') }}" class="am-cf"><small> 持续集成项目</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{ url_for('autciProjectProfile.aut_ci_project_list') }}" class="am-cf"><small> 自动化测试打包</small></a></div>
+        </div>
+        <div id="app_dropdown_menu" class="dropdown_menu" style="margin-top:200px;display:none;">
+            <div class="item"><a href="{{config.get('APPREPO_URL')}}/app/company/list" target="_blank" class="am-cf"><small> 逐级查看应用</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{config.get('APPREPO_URL')}}/app/project/list" target="_blank" class="am-cf"><small> 全部应用列表</small></a></div>
+        </div>
+        <div id="publish_dropdown_menu" class="dropdown_menu" style="margin-top:210px;display:none;">
+            <div class="item"><a href="{{url_for('publishProfile.publish_list')}}" class="am-cf"><small> 最新发布</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('publishProfile.publish_history')}}" class="am-cf"><small> 发布历史</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('publishStatisticsProfile.publish_statistics')}}" class="am-cf"><small> 发布统计</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('publishProfile.publish_app_list')}}" class="am-cf"><small> 应用发布记录</small></a></div>
+        </div>
+        <div id="env_dropdown_menu" class="dropdown_menu" style="margin-top:220px;display:none;">
+            <div class="item"><a href="https://cmdb-core.zhonganonline.com/arrange/app_arrange/prd/list" class="am-cf"><small> 生产应用编排</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="https://cmdb-core.zhonganonline.com/arrange/app_arrange/pre/list" class="am-cf"><small> 预发应用编排</small></a></div>
+            <hr style="border-color:#0e90d2" v-if="user_show.pe>0">
+            <div class="item" v-if="user_show.pe>0"><a href="https://cmdb-core.zhonganonline.com/arrange/res_pool/list" class="am-cf"><small> 预发资源池管理</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('operationProfile.result_list')}}" class="am-cf"><small> 操作记录查询</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('nexusProfile.list_dependency_list')}}" class="am-cf"><small> 私库依赖版本查询</small></a></div>
+        </div>
+        <div id="admin_dropdown_menu" class="dropdown_menu" style="margin-top:160px;display:none;" v-if="user_show.pe>0">
+            <div class="item"><a href="{{url_for('baseProfile.admin_user')}}" class="am-cf"><small> 用户管理</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('publishProfile.publish_switch')}}" class="am-cf"><small> 设置发布时间段及其它开关</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('noticeSystem.notice_system')}}" class="am-cf"><small> 公告提示及系统更新说明</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="https://duang.zhonganonline.com/faq/faqForm.do" class="am-cf"><small> FAQ管理(老系统)</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="https://duang.zhonganonline.com/faq/peFaqList.do" class="am-cf"><small> PE内部FAQ管理(老系统)</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="https://duang.zhonganonline.com/faq/feedbackManage.do" class="am-cf"><small> 用户吐槽管理(老系统)</small></a></div>
+        </div>
+        <div id="flow_dropdown_menu" class="dropdown_menu" style="margin-top:120px;display:none;" v-if="user_show.duang_admin==2">
+            <div class="item"><a href="{{url_for('flowProfile.publish_config')}}" class="am-cf"><small> 发布流程配置</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('flowProfile.publish_list')}}" class="am-cf"><small> 发布流程查询</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('baseProfile.admin_role')}}" class="am-cf"><small> 权限管理</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('baseProfile.api_list')}}" class="am-cf"><small> API管理</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('baseProfile.task_runonce')}}" class="am-cf"><small> 手工调度</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('baseProfile.task_config')}}" class="am-cf"><small> 任务配置</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('baseProfile.task_his')}}" class="am-cf"><small> 执行记录</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('kafkaProfile.message_list')}}" class="am-cf"><small> Kafka消息记录</small></a></div>
+            <hr style="border-color:#0e90d2">
+            <div class="item"><a href="{{url_for('kafkaProfile.info')}}" class="am-cf"><small> Kafka信息</small></a></div>
+        </div>
+    </div>
+
+    <div class="am-cf admin-main">
+        <div style="background-color:#424f63;width:80px;height:100%;position:absolute;top:0px;" id="side-menu">
+            <center style="height:80px;width:100%" class="am-vertical-align">
+                <div class="am-vertical-align-middle" style="color:white;margin-top:20px;">
+                    <img src="{{ url_for('static', filename='assets/img/duang-logo.png') }}" height="80" width="80"/>
+                </div>
+            </center>
+            <center style="width:100%;margin-top:50px;">
+                <a class="am-icon-home am-icon-md am-vertical-align-middle main-menu-item" style="color:white;" href="{{url_for('baseProfile.home')}}" title="首页"></a>
+            </center>
+            <center style="width:100%;margin-top:20px;">
+                <a class="am-icon-tasks am-icon-md am-vertical-align-middle main-menu-item" style="color:white;" href="#" id="project_menu"></a>
+            </center>
+            <center style="width:100%;margin-top:20px;">
+                <a class="am-icon-apple am-icon-md am-vertical-align-middle main-menu-item" style="color:white;" href="#" id="app_menu"></a>
+            </center>
+            <center style="width:100%;margin-top:20px;">
+                <a class="am-icon-cloud-upload am-icon-md am-vertical-align-middle main-menu-item" style="color:white;" href="#" id="publish_menu"></a>
+            </center>
+            <center style="width:100%;margin-top:20px;">
+                <a class="am-icon-umbrella am-icon-md am-vertical-align-middle main-menu-item" style="color:white;" href="#" id="env_menu"></a>
+            </center>
+            <center style="width:100%;margin-top:20px;" v-if="user_show.pe>0">
+                <a class="am-icon-gear am-icon-md am-vertical-align-middle main-menu-item" style="color:white;" href="#" id="admin_menu"></a>
+            </center>
+            <center style="width:100%;margin-top:20px;" v-if="user_show.duang_admin>0">
+                <a class="am-icon-object-group am-icon-md am-vertical-align-middle main-menu-item" style="color:white;" href="#" id="flow_menu"></a>
+            </center>
+        </div>
+        <!-- content start -->
+        <div class="admin-content" style="height:100%;overflow-y:auto;background:#EDEEF0;{%if homepage%}background-image:url({{ url_for('static', filename='assets/img/home-background.png') }});background-position: center top;background-size: cover;{%else%}background:#EDEEF0;{%endif%}">
+            {% block content %}
+
+            {% endblock %}
+        </div>
+        <!-- content end -->
+    </div>
+
+{% block html %}
+
+{% endblock %}
+
+    <div id="errorModal">
+        <modal :show="show" v-on:close="close">
+            <span slot="header">错误</span>
+            <span slot="body" v-html="msg"></span>
+            <span slot="footer" class="am-modal-btn" @click="close">确定</span>
+        </modal>
+    </div>
+
+    <div id="infoModal">
+        <modal :show="show" v-on:close="close">
+            <span slot="header">信息</span>
+            <span slot="body" v-html="msg"></span>
+            <span slot="footer" class="am-modal-btn" @click="close">确定</span>
+        </modal>
+    </div>
+
+    <div id="spinningModal">
+        <div class="am-modal am-modal-alert" v-bind:class="{ 'am-modal-active': show }" tabindex="-1" v-if="show" style="display:block;z-index: 1101;">
+            <div class="am-modal-dialog" style="width: 300px;">
+                <div class="am-modal-bd">
+                    <i class="am-icon-spinner am-icon-pulse am-icon-lg"></i>
+                    <hr>
+                    <div v-html="msg"></div>
+                </div>
+            </div>
+        </div>
+        <div class="am-dimmer" data-am-dimmer v-bind:class="{ 'am-active': show }" v-if="show" style="display:block;"></div>
+    </div>
+
+    <template id="modal">
+        <div>
+            <div class="am-modal am-modal-alert" v-bind:class="{ 'am-modal-active': show }" tabindex="-1" v-if="show" style="display:block;z-index: 1101;">
+                <div class="am-modal-dialog" :style="{'width': width+'px'}" style="border: 1px solid black;">
+                    <div class="am-modal-hd">
+                        <slot name="header"></slot>
+                        <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close @click="$emit('close')">&times;</a>
+                    </div>
+                    <div class="am-modal-bd">
+                        <slot name="body"></slot>
+                    </div>
+                    <div class="am-modal-footer">
+                        <slot name="footer"></slot>
+                    </div>
+                </div>
+            </div>
+            <div class="am-dimmer" data-am-dimmer v-bind:class="{ 'am-active': show }" v-if="show" style="display:block;"></div>
+        </div>
+    </template>
+
+{% block css %}
+
+{% endblock %}
+
+<script language="JavaScript">
+    user_show = {};
+    user_role = ''
+    {% if session['userInfo'] %}
+         user_role = '{{ session['userInfo']['role'] }}'
+    {% endif %}
+    {% for k,v in session['userPrivileges'].items() %}
+        user_show['{{k}}'] = '{{v}}'
+    {% endfor %}
+
+    $(document).ready(function(){
+        hide_all_menu();
+        head_line.check_msg();
+        $('#project_menu').mouseover(function(){
+            hide_all_menu();
+            $('#project_dropdown_menu').show();
+        });
+        $('#project_dropdown_menu').hover(function(){
+            $('#project_dropdown_menu').show();
+        }, function(){
+            $('#project_dropdown_menu').hide();
+        });
+
+        $('#app_menu').mouseover(function(){
+            hide_all_menu();
+            $('#app_dropdown_menu').show();
+        });
+        $('#app_dropdown_menu').hover(function(){
+            $('#app_dropdown_menu').show();
+        }, function(){
+            $('#app_dropdown_menu').hide();
+        });
+
+        $('#publish_menu').mouseover(function(){
+            hide_all_menu();
+            $('#publish_dropdown_menu').show();
+        });
+        $('#publish_dropdown_menu').hover(function(){
+            $('#publish_dropdown_menu').show();
+        }, function(){
+            $('#publish_dropdown_menu').hide();
+        });
+
+        $('#env_menu').mouseover(function(){
+            hide_all_menu();
+            $('#env_dropdown_menu').show();
+        });
+        $('#env_dropdown_menu').hover(function(){
+            $('#env_dropdown_menu').show();
+        }, function(){
+            $('#env_dropdown_menu').hide();
+        });
+
+        $('#admin_menu').mouseover(function(){
+            hide_all_menu();
+            $('#admin_dropdown_menu').show();
+        });
+        $('#admin_dropdown_menu').hover(function(){
+            $('#admin_dropdown_menu').show();
+        }, function(){
+            $('#admin_dropdown_menu').hide();
+        });
+
+        $('#flow_menu').mouseover(function(){
+            hide_all_menu();
+            $('#flow_dropdown_menu').show();
+        });
+        $('#flow_dropdown_menu').hover(function(){
+            $('#flow_dropdown_menu').show();
+        }, function(){
+            $('#flow_dropdown_menu').hide();
+        });
+        if(user_role == 'user'){
+            var page_url = window.location.href;
+            url = '{{config["SERVER_URL"]}}/';
+            if(url != page_url){
+                window.location.href= url;
+            }
+        }
+    });
+    function hide_all_menu(){
+        $('#project_dropdown_menu').hide();
+        $('#app_dropdown_menu').hide();
+        $('#publish_dropdown_menu').hide();
+        $('#env_dropdown_menu').hide();
+        $('#admin_dropdown_menu').hide();
+        $('#flow_dropdown_menu').hide();
+    }
+
+    // ES6 模板字符串
+    Vue.options.delimiters = ['${', '}'];
+
+    Vue.component('modal', {
+	    template: '#modal',
+	    props: {
+	        show:{
+	            type: Boolean,
+	            default: false
+	        },
+	        width:{
+	            typs: Number,
+	            default: 540
+	        }
+	    }
+	});
+
+    var errorModal = new Vue({
+	    el: '#errorModal',
+	    data: {
+	        show: false,
+            msg: ''
+		},
+	    methods: {
+	        close: function() {
+		        this.show=false;
+		    }
+	    }
+	});
+
+	var infoModal = new Vue({
+	    el: '#infoModal',
+	    data: {
+	        show: false,
+            msg: ''
+		},
+	    methods: {
+	        close: function() {
+		        this.show=false;
+		    }
+	    }
+	});
+
+	var spinningModal = new Vue({
+	    el: '#spinningModal',
+	    data: {
+	        show: false,
+	        msg: ''
+		}
+	});
+
+	new Vue({
+        el: '#menu',
+        data: {
+            user_show: user_show
+        }
+    });
+
+    new Vue({
+        el: '#side-menu',
+        data: {
+            user_show: user_show
+        }
+    });
+
+	var head_line = new Vue({
+        el: '#head-line',
+        data: {
+            has_unreaded: true,
+            n: ""
+        },
+        methods: {
+            check_msg: function(){
+                jQuery.ajax({
+                    url: "{{url_for('baseProfile.notification_check')}}",
+                    data: {"r":Math.random()},
+                    dataType: "json",
+                    type: "GET",
+                    timeout : 10000,
+                    success: function(response) {
+                        unreaded = response.data.unreaded;
+
+                        if(unreaded>0){
+                            head_line.has_unreaded=true;
+                            head_line.n= "您有"+unreaded+"条未读通知"
+                        }else{
+                            head_line.has_unreaded=false;
+                            head_line.n=""
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        //be quite
+                    }
+                });
+            }
+        }
+    });
+</script>
+
+{% block js %}
+
+{% endblock %}
+
+</body>
+</html>

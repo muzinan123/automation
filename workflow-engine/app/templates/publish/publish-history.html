@@ -1,0 +1,247 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n9" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">历史发布单查询</strong></div>
+        </div>
+        <hr>
+        <div class="am-g" id="history" v-cloak>
+            <div class="am-u-sm-12 am-u-md-12" style="overflow:auto;min-height:500px">
+                <div class="am-u-sm-2 am-u-md-2 am-u-lg-1">
+                    <input type="text" class="am-form-field" id="change_begin_date" placeholder="请选择开始时间" style="min-width:100px">
+                </div>
+                <div class="am-u-sm-2 am-u-md-2 am-u-lg-1">
+                    <input type="text" class="am-form-field" id="change_end_date" placeholder="请选择结束时间" style="min-width:100px">
+                </div>
+                <div class="am-form am-u-sm-2 am-u-md-2 am-u-lg-1">
+                    <div class="am-form-group am-input-group">
+                         <select v-model="project_type" style="width:100px;">
+                             <option value="">项目类型</option>
+                             <option value="code_optimization">代码优化</option>
+                             <option value="system_fault">系统故障</option>
+                             <option value="bug_repairs">缺陷修复</option>
+                             <option value="requirement_change">需求变更</option>
+                             <option value="new_product">新产品</option>
+                             <option value="new_feature">新功能</option>
+                             <option value="others">其他</option>
+                         </select>
+                    </div>
+                </div>
+                <div class="am-form am-u-sm-2 am-u-md-2 am-u-lg-2">
+                    <select id="department" multiple data-am-selected="{maxHeight: 400}" placeholder="请选择部门名称" >
+                        <optgroup :label="one.name" v-for="one in dept_list">
+                          <option :value="e.value" v-for="e in one.depts">${e.label}</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="am-form am-u-sm-2 am-u-md-2 am-u-lg-1">
+                    <div class="am-form-group am-input-group" style="font_size:small">
+                         <select v-model="publish_type" style="width:100px;">
+                             <option value="">发布类型</option>
+                             <option value="regular">常规发布</option>
+                             <option value="urgent">紧急发布</option>
+                         </select>
+                    </div>
+                </div>
+                <div class="am-form am-u-sm-2 am-u-md-2 am-u-lg-1">
+                    <div class="am-form-group am-input-group">
+                         <select v-model="status" style="width:100px;">
+                             <option value="">发布状态</option>
+                             <option value="prd_complete">发布完成</option>
+                             <option value="abandon">发布回退</option>
+                         </select>
+                    </div>
+                </div>
+                <div class="am-u-sm-2 am-u-md-1 am-u-lg-1">
+                    <span class="am-input-group-btn">
+                        <button class="am-btn am-btn-sm am-btn-primary" type="button" @click="filter">查询</button>
+                    </span>
+                </div>
+                <div class="am-u-sm-2 am-u-md-1 am-u-lg-1">
+                    <span class="am-input-group-btn">
+                        <a class="am-btn am-btn-sm am-btn-default" @click="export_history"><span class="am-icon-file-excel-o"></span> 导出</a>
+                    </span>
+                </div>
+                <div>
+                    <table class="am-table am-table-compact" style="font-size:small">
+                        <thead>
+                            <tr>
+                                <th>发布单号</th>
+                                <th>项目名称</th>
+                                <th>项目编号</th>
+                                <th>jira编号</th>
+                                <th>项目类型</th>
+                                <th>发布类型</th>
+                                <th>发布应用</th>
+                                <th>发布状态</th>
+                                <th>期望发布日</th>
+                                <th>测试验证人员</th>
+                                <th>Owner</th>
+                                <th>BA</th>
+                                <th>最后操作</th>
+                                <th>变更时间</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="his in his_list">
+                                <td>
+                                    <a v-bind:href="'/publish/'+ his.flow_data.id + '/detail'" >${his.flow_data.id} </a>
+                                </td>
+                                <td>${his.project.name}</td>
+                                <td>
+                                    <a v-bind:href="'/project/detail/' + his.project.id"> ${his.project.id} </a>
+                                </td>
+                                <td>
+                                    <span v-if="his.project.jira_issue_id">issue_key:<a v-bind:href="'{{config['JIRA_SERVER_URL']}}/browse/'+his.project.jira_issue_key">${his.project.jira_issue_key}</a></span>
+                                    <span v-else-if="his.project.jira_version_id">version_id:<a v-bind:href="'{{config['JIRA_SERVER_URL']}}/projects/'+his.project.jira_project_key+ '/versions/'+his.project.jira_version_id">${his.project.jira_version_id}</a></span>
+                                </td>
+                                <td>${his.project.type|get_project_type}</td>
+                                <td>
+                                    <span v-if="his.flow_data.publish_type=='regular'">常规发布</span>
+                                    <span v-else>紧急发布</span>
+                                </td>
+                                <td>
+                                    <span v-for="info, id in his.flow_data.app_info">
+                                        ${info.name}<br>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span v-if="his.flow_data.status=='prd_complete'">完成</span>
+                                    <span v-if="his.flow_data.status=='abandon'">废弃</span>
+                                </td>
+                                <td>${his.project.expect_publish_date}</td>
+                                <td>${his.flow_data.qa}</td>
+                                <td>${his.project.owner.real_name}</td>
+                                <td>${his.project.ba.real_name}</td>
+                                <td>${his.project.last_operator}</td>
+                                <td>${his.flow_data.last_change_date}</td>
+                                <td>
+                                    <span v-if="his.flow_data.status=='prd_complete'">发布完成</span>
+                                    <span v-if="his.flow_data.status=='abandon'">发布回退</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block css%}
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.datetimepicker-se.min.css') }}" >
+{% endblock %}
+
+{% block html %}
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/moment.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='assets/js/amazeui.datetimepicker-se.min.js') }}" ></script>
+<script language="JavaScript">
+    data = {
+        his_list: [],
+        project_type: '',
+        publish_type: '',
+        status: '',
+        dept_list: [],
+    }
+
+    var his= new Vue({
+        el: "#history",
+        data: data,
+        methods: {
+            filter: function(){
+                this.load_history();
+            },
+            export_history: function(){
+                departments = ""
+                if($('#department').val()){
+                    departments = $('#department').val().join(',')
+                }
+                window.location.href="{{url_for('publishProfile.export_publish_history')}}?change_begin_date="+$('#change_begin_date').val()+"&change_end_date="+
+                $('#change_end_date').val()+"&project_type="+this.project_type+"&publish_type="+this.publish_type+"&status="+ this.status+"&departments="+departments
+            },
+            load_history: function(){
+                departments = ""
+                if($('#department').val()){
+                    departments = $('#department').val().join(',')
+                }
+                this.$http.get("{{url_for('publishProfile.get_publish_history')}}", {'params':{"change_begin_date": $('#change_begin_date').val(), "change_end_date": $('#change_end_date').val(), "project_type": this.project_type, "publish_type": this.publish_type, "status": this.status, "departments": departments}, emulateJSON: true}).then(
+                function(response) {
+                    console.log(response.data)
+                    data.his_list = []
+                    response.data.data.forEach(function(e){
+                        data.his_list.push(e);
+                    });
+                },function(res){
+                    console.log(res);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            load_app_company: function() {
+                this.$http.get("{{config['APPREPO_URL']}}/api/app/company/list", {params: {"r":Math.random()}, emulateJSON: true}).then(
+                function(response){
+                    if(response.data.result == 1){
+                        data.dept_list = []
+                        response.data.data.companyList.forEach(function(e){
+                            his.load_app_department(e.value, e.full_name)
+                        });
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            load_app_department: function(company_id, company_name) {
+                this.$http.get("{{config['APPREPO_URL']}}/api/app/department/list", {params: {"company_id":company_id, "r":Math.random()}, emulateJSON: true}).then(
+                function(response){
+                    if(response.data.result == 1){
+                        data.dept_list.push({'name': company_name, 'depts': response.data.data.departmentList})
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            }
+        }
+    });
+
+    $(document).ready(function() {
+        $('#change_begin_date').datetimepicker({
+            format: 'YYYY-MM-DD'
+        });
+        $('#change_end_date').datetimepicker({
+            format: 'YYYY-MM-DD'
+        });
+        setDate()
+        his.load_app_company();
+        his.load_history();
+    });
+    function setDate(){
+        var now = new Date()
+        var now_date_str = formatDate(now).split(' ')[0]
+        var next_date = now.setDate(now.getDate()+1)
+        var next_date_month = (now.getMonth()+1).toString()
+        next_date = now.getDate().toString()
+        next_date_month = next_date_month.length==1?"0"+next_date_month:next_date_month
+        next_date = next_date.length==1?"0"+next_date:next_date
+        next_date_str = now.getFullYear() + '-' + next_date_month + '-' + next_date
+        $('#change_begin_date').val(now_date_str)
+        $('#change_end_date').val(next_date_str)
+    }
+</script>
+{% endblock %}

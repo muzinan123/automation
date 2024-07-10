@@ -1,0 +1,115 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="admin-content-body" id="main">
+    <div class="am-cf am-padding">
+        <div class="am-cf">
+            <strong class="am-text-primary am-text-lg">待办列表</strong>
+            <a class="am-icon-btn am-icon-refresh am-success am-icon-btn-sm" href="#" @click="refresh"></a>
+        </div>
+    </div>
+    <div class="am-g">
+        <hr>
+        <div class="am-u-md-6">
+            <div class="am-panel am-panel-default">
+                <div class="am-panel-hd">待办项目单</div>
+                <table class="am-table am-table-striped am-table-hover am-panel-bd">
+                    <thead>
+                    <tr>
+                        <th>项目Id</th>
+                        <th>项目名称</th>
+                        <th>参与角色</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-if="Object.keys(project_list).length==0">
+                        <td colspan="4"><center>暂无</center></td>
+                    </tr>
+                    <tr v-for="d,k in project_list">
+                        <td>${k}</td>
+                        <td><a :href="'/project/detail/'+k" target="_blank">${d.data.name}</a></td>
+                        <td><span class="am-badge am-badge-primary" v-for="prvg in d.prvg" style="margin-right:5px;">${prvg}</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="am-u-md-6">
+            <div class="am-panel am-panel-default">
+                <div class="am-panel-hd">待办发布单</div>
+                <table class="am-table am-table-striped am-table-hover am-panel-bd">
+                    <thead>
+                    <tr>
+                        <th>发布Id</th>
+                        <th>项目Id</th>
+                        <th>项目名称</th>
+                        <th>参与角色</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-if="Object.keys(publish_list).length==0">
+                        <td colspan="4"><center>暂无</center></td>
+                    </tr>
+                    <tr v-for="d,k in publish_list">
+                        <td><a href="/publish/manage" target="_blank">${k}</a></td>
+                        <td>${d.data.project.id}</td>
+                        <td><a :href="'/project/detail/'+d.data.project.id" target="_blank">${d.data.project.name}</a></td>
+                        <td><span class="am-badge am-badge-primary" v-for="prvg in d.prvg" style="margin-right:5px;">${prvg}</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block html %}
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+    var main = new Vue({
+        el: '#main',
+        data: {
+            project_list: {},
+            publish_list: []
+        },
+        mounted:function() {
+            this.load_project();
+            this.load_publish();
+        },
+        methods:{
+            load_project: function(){
+                this.$http.get('{{url_for("projectProfile.todo_project_list")}}').then(function(response){
+                    main.project_list = response.data.data;
+                },function(response){
+                    errorModal.msg="加载失败，请稍后重试";
+                    errorModal.show=true;
+                });
+            },
+            load_publish: function(){
+                this.$http.get('{{url_for("projectProfile.todo_publish_list")}}').then(function(response){
+                    main.publish_list = response.data.data;
+                },function(response){
+                    errorModal.msg="加载失败，请稍后重试";
+                    errorModal.show=true;
+                });
+            },
+            refresh: function(){
+                main.load_project();
+                main.load_publish();
+            }
+        }
+    });
+</script>
+{% endblock %}

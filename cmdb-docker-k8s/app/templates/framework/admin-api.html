@@ -1,0 +1,501 @@
+{% extends "framework/base_with_dropdown.html" %}
+
+{% block content %}
+
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-fl am-cf"><strong class="am-text-primary am-text-lg">用户与权限</strong> / <small>API管理</small></div>
+        </div>
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12" id="v-user-list">
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <input id="query" type="text" class="am-form-field" placeholder="API名称、应用名称、IP" v-model="query">
+                    <span class="am-input-group-btn">
+                        <button id="filter" class="am-btn am-btn-default" type="button" @click="filter"><span class="am-icon-search"></span> </button>
+                    </span>
+                </div>
+
+                <div class="am-input-group am-u-lg-3 am-u-sm-6">
+                    <a class="am-btn am-btn-success" @click="add_acl">新增API权限</a>
+                </div>
+
+                <table class="am-table am-table-striped am-table-hover table-main" id="user_list">
+                    <thead>
+                        <tr>
+                            <th class="table-id am-hide-sm-only">ID</th>
+                            <th class="table-title">应用名称</th>
+                            <th class="table-title">API名称</th>
+                            <th class="table-title">IP</th>
+                            <th class="table-title am-hide-sm-only">Token</th>
+                            <th class="table-title">有效</th>
+                            <th class="table-set">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(key, line) in acllist">
+                            <td class="am-hide-sm-only">${line.id}</td>
+                            <td>${line.app}</td>
+                            <td>${line.api_name}</td>
+                            <td>${line.ip}</td>
+                            <td class="am-hide-sm-only">${line.token}</td>
+                            <td>${line.enabled}</td>
+                            <td>
+                                <div class="am-btn-toolbar">
+                                    <div class="am-btn-group am-btn-group-xs">
+                                        <button class="am-btn am-btn-default am-btn-xs am-text-secondary" @click="edit" v-bind:value="key"><span class="am-icon-pencil-square-o am-icon-fw" v-bind:value="key"></span> 编辑</button>
+                                        <button class="am-btn am-btn-default am-btn-xs am-text-danger am-hide-sm-only" @click="delete" v-bind:value="key"><span class="am-icon-trash-o am-icon-fw" v-bind:value="key"></span> 删除</button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="am-cf">
+                    共 <span id="total">${total}</span> 条记录
+                    <div class="am-fr" id="paging">
+                        <ul class="am-pagination">
+                            <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="prev">«</a></li>
+                            <template v-for="pagenum in pagenums">
+                                <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                            </template>
+                            <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="next">»</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+
+{% endblock %}
+{% block html %}
+
+    <div id="errorModal">
+        <dialog v-bind:show.sync="show">
+            <span slot="header">错误</span>
+            <span slot="body">${msg}</span>
+            <span slot="footer" class="am-modal-btn" @click="close">确定</span>
+        </dialog>
+    </div>
+
+    <div id="addAclModal">
+        <form id="addAclForm" action="" class="am-form">
+            <dialog v-bind:show.sync="show">
+                <span slot="header">新增API权限</span>
+                <div slot="body">
+                    <fieldset>
+                        <div class="am-form-group">
+                            <label class="am-fl">应用名称</label>
+                            <input type="text" v-model="app" placeholder="接入API的应用名称"/>
+                        </div>
+                        <div class="am-form-group">
+                            <label class="am-fl">API名称</label>
+                            <select required v-model="api_name">
+                                <option value="">请选择</option>
+                                <option value="*">*</option>
+                                <option v-for="api in apilist" value="${api}">${api}</option>
+                            </select>
+                            <span class="am-form-caret"></span>
+                        </div>
+                        <div class="am-form-group">
+                            <label class="am-fl">IP</label>
+                            <input type="text" v-model="ip" placeholder="接入API的来源IP，填写*则不限制"/>
+                        </div>
+                        <div class="am-form-group">
+                            <label class="am-fl">Token</label>
+                            <br>
+                            <div class="am-input-group" style="width:100%;">
+                                <input type="text" v-model="token" placeholder="接入API的Token"/>
+                                <span class="am-input-group-btn">
+                                    <button class="am-btn am-btn-default" type="button" @click="generate">随机生成</button>
+                                </span>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <button slot="footer" class="am-btn am-btn-link" type="submit">确定</button>
+            </dialog>
+        </form>
+    </div>
+
+    <div id="editAclModal">
+        <form id="editAclForm" action="" class="am-form">
+            <dialog v-bind:show.sync="show">
+                <span slot="header">编辑API权限</span>
+                <div slot="body">
+                    <fieldset>
+                        <div class="am-form-group">
+                            <label class="am-fl">应用名称</label>
+                            <input type="text" v-model="app" placeholder="接入API的应用名称"/>
+                        </div>
+                        <div class="am-form-group">
+                            <label class="am-fl">API名称</label>
+                            <select required v-model="api_name">
+                                <option value="">请选择</option>
+                                <option value="*">*</option>
+                                <option v-for="api in apilist" value="${api}">${api}</option>
+                            </select>
+                            <span class="am-form-caret"></span>
+                        </div>
+                        <div class="am-form-group">
+                            <label class="am-fl">IP</label>
+                            <input type="text" v-model="ip" placeholder="接入API的来源IP，填写*则不限制"/>
+                        </div>
+                        <div class="am-form-group">
+                            <label class="am-fl">Token</label>
+                            <br>
+                            <div class="am-input-group" style="width:100%;">
+                                <input type="text" v-model="token" placeholder="接入API的Token"/>
+                                <span class="am-input-group-btn">
+                                    <button class="am-btn am-btn-default" type="button" @click="generate">随机生成</button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="am-u-sm-4">
+                            <label class="am-checkbox">
+                                <input v-model="enabled" type="checkbox" value="" data-am-ucheck> 有效
+                            </label>
+                        </div>
+                    </fieldset>
+                </div>
+                <button slot="footer" class="am-btn am-btn-link" type="submit">确定</button>
+            </dialog>
+        </form>
+    </div>
+
+
+    <template id="dialog">
+        <div>
+            <div class="am-modal am-modal-alert" v-bind:class="{ 'am-modal-active': show }" tabindex="-1" v-if="show" style="display:block;z-index: 1501;">
+                <div class="am-modal-dialog" style="width:400px;">
+                    <div class="am-modal-hd">
+                        <slot name="header"></slot>
+                        <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close @click="close">&times;</a>
+                    </div>
+                    <div class="am-modal-bd">
+                        <slot name="body"></slot>
+                    </div>
+                    <div class="am-modal-footer">
+                        <slot name="footer"></slot>
+                    </div>
+                </div>
+            </div>
+            <div class="am-dimmer" data-am-dimmer v-bind:class="{ 'am-active': show }" v-if="show" style="display:block;"></div>
+        </div>
+    </template>
+
+{% endblock %}
+
+{% block css %}
+
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/sha-1.js') }}"></script>
+<script language="JavaScript">
+
+    data = {
+        query: '',
+        acllist: [],
+        total: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1
+    }
+
+    new Vue({
+        el: '#v-user-list',
+        data: data,
+        methods: {
+            prev: function(event){
+                load_acl_list(this.now*1-1);
+            },
+            go: function(event){
+                load_acl_list(event.target.innerHTML);
+            },
+            next: function(event){
+                load_acl_list(this.now*1+1);
+            },
+            filter: function(event){
+                load_acl_list(1);
+            },
+            add_acl: function(event){
+                addAclModal.show = true;
+            },
+            edit: function(event){
+                id = $(event.target).attr("value");
+                editAclModal.acl_id = data.acllist[id].id;
+                editAclModal.app = data.acllist[id].app;
+                editAclModal.api_name = data.acllist[id].api_name;
+                editAclModal.ip = data.acllist[id].ip;
+                editAclModal.token = data.acllist[id].token;
+                editAclModal.enabled = data.acllist[id].enabled;
+                editAclModal.show = true;
+            },
+            delete: function(event){
+                id = $(event.target).attr("value")
+                acl_id = data.acllist[id].id
+                if(confirm("确认要删除API权限吗？")){
+                    delete_acl(acl_id)
+                }
+            }
+        }
+    })
+
+
+    Vue.component('dialog', {
+	    template: '#dialog',
+	    props: {
+	        show:{
+	            type: Boolean,
+	            default: false
+	        }
+	    },
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	})
+
+	var errorModal = new Vue({
+	    el: '#errorModal',
+	    data: {
+			show: false,
+			msg: ''
+		},
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	})
+
+	var editAclModal = new Vue({
+	    el: '#editAclModal',
+	    data: {
+			show: false,
+			acl_id: '',
+			app: '',
+			api_name: '',
+			ip: '',
+            token: '',
+            enabled: true,
+            apilist: []
+		},
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    },
+		    generate: function() {
+		        this.token = generate_token();
+		    }
+	    }
+	})
+
+	var addAclModal = new Vue({
+	    el: '#addAclModal',
+	    data: {
+			show: false,
+			app: '',
+			api_name: '',
+			ip: '',
+            token: '',
+            apilist: []
+		},
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    },
+		    generate: function() {
+		        this.token = generate_token();
+		    }
+	    }
+	})
+
+    $(document).ready(function() {
+
+        load_acl_list(data.now);
+        load_api_list();
+
+        $('#addAclForm').validator({
+            submit: function() {
+                var formValidity = this.isFormValid();
+                if(formValidity ){
+                    // 验证成功的逻辑
+                    app = addAclModal.app;
+                    api_name = addAclModal.api_name;
+                    ip = addAclModal.ip;
+                    token = addAclModal.token;
+                    addAclModal.show = false;
+                    add_acl(app, api_name, ip, token);
+                }
+                return false;
+            }
+        });
+
+        $('#editAclForm').validator({
+            submit: function() {
+                var formValidity = this.isFormValid();
+                if(formValidity ){
+                    // 验证成功的逻辑
+                    acl_id = editAclModal.acl_id
+                    app = editAclModal.app;
+                    api_name = editAclModal.api_name;
+                    ip = editAclModal.ip;
+                    token = editAclModal.token;
+                    enabled = editAclModal.enabled;
+                    editAclModal.show = false;
+                    edit_acl(acl_id, app, api_name, ip, token, enabled)
+                }
+                return false;
+            }
+        });
+    });
+
+
+    function load_acl_list(p){
+        data.now = p;
+        $.AMUI.progress.start();
+        console.log("start load api list");
+        jQuery.ajax({
+            url: "{{url_for('api_list__acl')}}",
+            dataType: "json",
+            data: {"p": p ,"query": data.query, "r":Math.random()},
+            type: "GET",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                console.log(response);
+                data.total = response.data.total;
+                paging(response.data.prevNum, response.data.nextNum, response.data.total, response.data.perPage)
+                data.acllist = []
+                response.data.aclList.forEach(function(e){
+                    data.acllist.push(e);
+                });
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                console.log("error");
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function load_api_list(){
+        console.log("start load role list");
+        jQuery.ajax({
+            url: "{{url_for('api_list__api')}}",
+            dataType: "json",
+            data: {"r":Math.random()},
+            type: "GET",
+            timeout : timeout,
+            success: function(response) {
+                response.data.forEach(function(e){
+                    editAclModal.apilist.push(e);
+                    addAclModal.apilist.push(e);
+                });
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                //call failed
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+
+    function add_acl(app, api_name, ip, token){
+        $.AMUI.progress.start();
+        console.log("start add acl");
+        jQuery.ajax({
+            url: "{{url_for('api_list__acl')}}",
+            dataType: "json",
+            data: {"app":app, "api_name":api_name, "ip":ip, "token":token, "r":Math.random()},
+            type: "PUT",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                load_acl_list(data.now);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function edit_acl(acl_id, app, api_name, ip, token, enabled){
+        $.AMUI.progress.start();
+        console.log("start edit acl");
+        jQuery.ajax({
+            url: "{{url_for('api_list__acl')}}",
+            dataType: "json",
+            data: {"acl_id": acl_id, "app":app, "api_name":api_name, "ip":ip, "token":token, "enabled":enabled, "r":Math.random()},
+            type: "POST",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                load_acl_list(data.now);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function delete_acl(acl_id){
+        $.AMUI.progress.start();
+        console.log("start delete acl");
+        jQuery.ajax({
+            url: "{{url_for('api_list__acl')}}",
+            dataType: "json",
+            data: {"acl_id": acl_id, "r": Math.random()},
+            type: "DELETE",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                load_acl_list(data.now);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                console.log("error");
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function generate_token(){
+       len = 10;
+    　　var $chars = 'ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678';
+    　　var maxPos = $chars.length;
+    　　var pwd = '';
+    　　for (i = 0; i < len; i++) {
+    　　　　pwd += $chars.charAt(Math.floor(Math.random() * maxPos));
+    　　}
+    　　return pwd;
+    }
+</script>
+{% endblock %}

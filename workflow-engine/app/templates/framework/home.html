@@ -1,0 +1,281 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n5" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="am-g" style="padding-top:10px;padding-bottom:10px;" id="list">
+    <div class="am-u-md-6">
+        <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+            <header class="am-panel-hd" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                公告提示
+            </header>
+            <main class="am-panel-bd" style="background:rgba(0,0,0,0);height:180px;">
+                <p style="overflow:auto; color: white; height:160px;-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); border-radius: 10px;padding: 10px " v-html="noticeContent"/>
+            </main>
+        </section>
+    </div>
+
+    <div class="am-u-md-6">
+        <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+            <header class="am-panel-hd" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                系统更新说明
+            </header>
+            <main class="am-panel-bd" style="background:rgba(0,0,0,0);height:180px;">
+                <p style="overflow:auto;height:160px;color: white;-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); border-radius: 10px;padding: 10px" v-html="systemContent"/>
+            </main>
+        </section>
+    </div>
+
+    <div class="am-u-md-12">
+        <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+            <main class="am-panel-bd" style="background:rgba(0,0,0,0);height:150px;padding-top:5px">
+                <ul class="am-avg-md-12 am-margin am-padding am-text-center">
+                    <li style="border-width:0px;margin-bottom:5px;"><a href="{{url_for('publishProfile.publish_list')}}" style="color:white"><span class="am-icon-btn am-icon-cloud-upload"></span><br>最新发布</a></li>
+                    <li style="border-width:0px;margin-bottom:5px;"><a href="{{url_for('projectProfile.todo_list')}}" style="color:white"><span class="am-icon-btn am-icon-at"></span><br>待办列表</a></li>
+                    <li style="border-width:0px;margin-bottom:5px;"><a href="{{url_for('projectProfile.project')}}" style="color:white"><span class="am-icon-btn am-icon-tasks"></span><br>项目列表</a></li>
+                    <li style="border-width:0px;margin-bottom:5px;"><a href="{{url_for('ciProjectProfile.ci_project_list')}}" style="color:white"><span class="am-icon-btn am-icon-cogs"></span><br>持续集成项目</a></li>
+                    <li style="border-width:0px;margin-bottom:5px;"><a href="{{url_for('nexusProfile.list_dependency_list')}}" style="color:white"><span class="am-icon-btn am-icon-file-text-o"></span><br>Parent版本查询</a></li>
+                    <li style="border-width:0px;margin-bottom:5px;"><a href="https://apprepo.zhonganonline.com/app/project/list" target="_blank" style="color:white"><span class="am-icon-btn am-icon-apple"></span><br>应用代码管理</a></li>
+                    <li style="border-width:0px;margin-bottom:5px;"><a href="https://westworld.zhonganonline.com/diy/change_pw/svn" target="_blank" style="color:white"><span class="am-icon-btn am-icon-database"></span><br>SVN密码修改</a></li>
+                    <li style="border-width:0px;margin-bottom:5px;"><a href="https://westworld.zhonganonline.com/diy/reset_pw/git" target="_blank" style="color:white"><span class="am-icon-btn am-icon-gitlab"></span><br>Gitlab密码重置</a></li>
+                    <li style="border-width:0px;margin-bottom:5px;"><a href="https://pwd.zhonganonline.com" target="_blank" style="color:white"><span class="am-icon-btn am-icon-windows"></span><br>域密码重置</a></li>
+                    <li style="border-width:0px;margin-bottom:5px;"><a href="https://apprepo.zhonganonline.com/diff/list" target="_blank" style="color:white"><span class="am-icon-btn am-icon-code"></span><br>Code Review</a></li>
+                </ul>
+            </main>
+        </section>
+    </div>
+
+    <div class="am-u-md-3">
+        <a href="https://westworld.zhonganonline.com/home" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">Westworld</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="https://westworld.zhonganonline.com/home" target="_blank">Devops权限资源申请系统</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+    <div class="am-u-md-3">
+        <a href="https://cmdb.zhonganonline.com/" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">CMDB</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="https://cmdb.zhonganonline.com/" target="_blank">配置管理数据库</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+    <div class="am-u-md-3">
+        <a href="https://gayway.zhonganonline.com/" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">Gayway</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="https://gayway.zhonganonline.com/" target="_blank">堡垒机</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+    <div class="am-u-md-3">
+        <a href="https://jira.zhonganonline.com/secure/Dashboard.jspa" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">JIRA</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="https://jira.zhonganonline.com/secure/Dashboard.jspa" target="_blank">流程管理系统</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+
+    <div class="am-u-md-3">
+        <a href="{{config['ZATEST_URL']}}" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">ZA-TEST</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="{{config['ZATEST_URL']}}" target="_blank">测试平台</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+    <div class="am-u-md-3">
+        <a href="http://idb.zhonganonline.com" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">iDB</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="http://idb.zhonganonline.com" target="_blank">数据库查询系统</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+    <div class="am-u-md-3">
+        <a href="https://wiki.zhonganonline.com/dashboard.action" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">WiKi</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="https://wiki.zhonganonline.com/dashboard.action" target="_blank">知识共享平台</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+    <div class="am-u-md-3">
+        <a href="http://keystone.zhonganonline.com/v1/dashboard" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">Keystone</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="http://keystone.zhonganonline.com/v1/dashboard" target="_blank">微服务查询系统</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+
+    <div class="am-u-md-3">
+        <a href="http://boom.zhonganonline.com" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">Boom</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="http://boom.zhonganonline.com" target="_blank">微服务发布系统</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+    <div class="am-u-md-3">
+        <a href="http://gitlab.zhonganonline.com" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">Gitlab</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="http://gitlab.zhonganonline.com" target="_blank">Git代码管理系统</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+    <div class="am-u-md-3">
+        <a href="http://mvnrepos.zhonganonline.com/nexus/index.html" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">Nexus</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="http://mvnrepos.zhonganonline.com/nexus/index.html" target="_blank">Java依赖私库</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+    <div class="am-u-md-3 am-u-end">
+        <a href="http://qa.zhonganonline.com" target="_blank">
+            <section class="am-panel am-panel-default" style="background:rgba(0,0,0,0.3);border-color:rgba(0,0,0,0)">
+                <main class="am-panel-bd" style="background:rgba(0,0,0,0);">
+                    <b style="color:white">QA-monitor</b>
+                </main>
+                <footer class="am-panel-footer" style="background:rgba(0,0,0,0.3);color:#66ffff;">
+                    <a href="http://qa.zhonganonline.com" target="_blank">测试机管理、SQA统计报告</a>
+                </footer>
+            </section>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block html %}
+<div id="roleModal">
+    <modal :show="show" :width="width" :height= "height" v-on:close="close">
+        <span slot="header">&nbsp</span>
+        <div slot="body" class="am-form">
+            <div>首次登陆的用户，请为自己选择一个角色。</div>
+            <hr>
+            <div class="am-form-group am-input-group" style="width:100%">
+                <input type="radio" value="dev" name="role" v-model="role_name"/> 开发 &nbsp&nbsp
+                <input type="radio" value="qa" name="role" v-model="role_name"/> 测试 &nbsp&nbsp
+                <input type="radio" value="ba" name="role" v-model="role_name"/> 需求
+            </div>
+        </div>
+        <a href="#" slot="footer" @click="commit" class="am-modal-btn">确定</a>
+    </modal>
+</div>
+{% endblock %}
+{% block js %}
+<script language="JavaScript">
+    var roleModal = new Vue({
+        el: '#roleModal',
+        data: {
+            role_name: '',
+            show: false,
+            width: 500,
+            height: 300
+        },
+        methods: {
+            close: function(){
+                this.show = false;
+            },
+            commit: function(){
+                this.$http.post("{{url_for('baseProfile.user_role_change')}}", {'user_id': '{{session['userId']}}', 'role_name' : this.role_name}, {emulateJSON: true}).then(
+                function (response) {
+                    if(response.data.result == 1){
+                        this.show = false;
+                        infoModal.msg = '修改成功';
+                        infoModal.show = true;
+                    }else{
+                        errorModal.msg = '修改失败';
+                        errorModal.show = true;
+                    }
+                },function (res) {
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            }
+        }
+    });
+    var list = new Vue({
+        el: '#list',
+        data: {
+            noticeContent:'',
+            systemContent:''
+        },
+        methods: {
+            showNoticeSystem: function(){
+                this.$http.get("{{url_for('noticeSystem.home_notice_system')}}").then(
+                function (response) {
+                    if(response.data.result == 1){
+                        this.noticeContent = response.data.data.noticeContent;
+                        this.systemContent = response.data.data.systemContent;
+                    }
+                },function (res) {
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            }
+        }
+    });
+    $(document).ready(function() {
+        list.showNoticeSystem();
+        if('{{session['userInfo']['role']}}' == 'user'){
+                roleModal.show = true
+        }
+    });
+</script>
+{% endblock %}

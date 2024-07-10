@@ -1,0 +1,89 @@
+{% extends "framework/frame.html" %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-fl am-cf"><strong class="am-text-primary am-text-lg">Kafka信息</strong></div>
+        </div>
+        <hr>
+        <div class="am-g">
+            <div class="am-u-sm-12" id="main">
+                <div class="am-panel am-panel-primary">
+                    <div class="am-panel-hd">
+                        主Topic
+                    </div>
+                    <table class="am-panel-bd am-table">
+                        <tr>
+                            <td><b>name</b></td>
+                            <td>{{config['KAFKA_TOPIC_NAME']}}</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                    <div class="am-panel-bd">
+                        <div class="am-panel am-panel-primary">
+                            <div class="am-panel-hd">
+                                分区
+                            </div>
+                            <table class="am-table am-panel-bd">
+                                <thead>
+                                    <tr>
+                                        <th>id</th>
+                                        <th>earliest available offset</th>
+                                        <th>latest available offset</th>
+                                        <th>leader</th>
+                                        <th>replicas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="line in main_partition">
+                                        <td>${line.id}</td>
+                                        <td>${line.earliest_available_offset}</td>
+                                        <td>${line.latest_available_offset}</td>
+                                        <td>${line.leader}</td>
+                                        <td>${line.replicas}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block css %}
+
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+    var main = new Vue({
+        el: '#main',
+        data: {
+            fail_partition: {},
+            main_partition: {},
+        },
+        mounted: function(){
+            this.$http.get("{{url_for('kafkaProfile.info_show')}}").then(
+            function(response){
+                console.log(response);
+                main.fail_partition=response.data.data.fail_partition;
+                main.main_partition=response.data.data.main_partition;
+            },
+            function(res){
+                console.log(res);
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            });
+        },
+        methods: {
+
+        },
+        watch: {
+
+        }
+    });
+</script>
+{% endblock %}

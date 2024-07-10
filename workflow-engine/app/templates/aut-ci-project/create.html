@@ -1,0 +1,231 @@
+{% extends "framework/frame.html" %}
+
+{% block content %}
+<div class="admin-content-body" style="word-break:break-all;">
+    <div class="am-cf am-padding">
+        <div class="am-cf"><strong class="am-text-primary am-text-lg">自动化测试打包</strong> / <small>新建项目</small></div>
+    </div>
+    <div class="am-g" id="main" v-cloak>
+        <div class="am-u-sm-12 am-u-md-11 am-u-md-centered" v-if="step==1">
+            <div class="am-panel am-panel-default">
+                <div class="am-panel-hd"><h4 class="am-panel-title">新建项目</h4></div>
+                <div class="am-panel-bd">
+                    <div class="am-input-group">
+                        <input type="text" class="am-form-field" placeholder="按应用名称查询" v-model="query"/>
+                        <span class="am-input-group-btn">
+                            <button class="am-btn am-btn-default" type="button" @click="find_app"><span class="am-icon-search"></span> </button>
+                        </span>
+                    </div>
+                    <hr v-if="app_list.length>0">
+                    <div v-if="app_list.length>0" style="max-height:350px;overflow-y:scroll;">
+                        <table class="am-table">
+                            <thead>
+                                <tr>
+                                    <th>应用名称</th>
+                                    <th>应用类型</th>
+                                    <th>代码地址</th>
+                                    <th>选择</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="line in app_list">
+                                    <td>${line.name}</td>
+                                    <td>${line.type}</td>
+                                    <td>${line.vcs_full_path}</td>
+                                    <td>
+                                        <input class="am-radio-inline" type="radio" :value="line.id" v-model="app_selected"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <hr v-if="app_selected && app_info">
+                    <table v-show="app_selected && app_info" class="am-table">
+                        <tbody>
+                            <tr>
+                                <td>中文名称</td>
+                                <td>${app_info.chinese_name}</td>
+                            </tr>
+                            <tr>
+                                <td>语言</td>
+                                <td>${app_info.language}</td>
+                            </tr>
+                            <tr>
+                                <td>类型</td>
+                                <td>${app_info.deploy_type}/${app_info.type}</td>
+                            </tr>
+                            <tr>
+                                <td>仓库地址</td>
+                                <td>
+                                    <span v-if="app_info.vcs_project">
+                                        ${app_info.vcs_project.full_url}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>公司 / 部门 / 产品线</td>
+                                <td>${app_info.company_name} / ${app_info.department_name} / ${app_info.production_name}</td>
+                            </tr>
+                            <tr>
+                                <td>分支<span class="am-icon-asterisk" style="color:red;margin-right:8px;"></span></td>
+                                <td>
+                                    <select data-am-selected="{searchBox: 1, maxHeight: '300px', dropUp: 1}" id="branch_selected">
+                                        <optgroup label="tag & trunk">
+                                            <option value="tag">tag</option>
+                                            <option value="trunk">trunk</option>
+                                        </optgroup>
+                                        <optgroup label="branch">
+                                            <option v-for="one in branch_list" :value="one">${one}</option>
+                                        </optgroup>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>JDK版本</td>
+                                <td>
+                                    <label class="am-radio-inline">
+                                        <input type="radio"  value="1.7" v-model="jdk_version"> 1.7
+                                    </label>
+                                    <label class="am-radio-inline">
+                                        <input type="radio" value="1.8" v-model="jdk_version"> 1.8
+                                    </label>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <center class="am-panel-footer">
+                    <a v-if="app_selected && app_info && branch_selected" class="am-btn am-btn-primary" href="#" @click="commit">提交</a>
+                </center>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block html %}
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+    var main = new Vue({
+        el: '#main',
+        data: {
+            query: '',
+            app_list: [],
+            app_selected: '',
+            step: 1,
+            app_info: {},
+            branch_list: [],
+            branch_selected: '',
+            jdk_version: ''
+        },
+        methods: {
+            find_app: function(){
+                this.app_selected = '';
+                if(this.query && this.query.length <3){
+                    errorModal.msg='查询内容长度至少为3个字符';
+                    errorModal.show=true;
+                }else if(this.query){
+                    this.$http.get("{{config['APPREPO_URL']}}/api/app/project/query", {params: {"query": this.query}, emulateJSON: true}).then(
+                    function(response){
+                        if(response.data.result == 1){
+                            main.app_list = [];
+                            response.data.data.projectList.forEach(function(e){
+                                if(e.language=='JAVA'){
+                                    main.app_list.push(e)
+                                }
+                            })
+                        }else{
+                            errorModal.msg='未找到匹配应用。';
+                            errorModal.show=true;
+                        }
+                    },function(res){
+                        errorModal.msg='网络连接异常，请稍后重试。';
+                        errorModal.show=true;
+                    });
+                }
+            },
+            next: function(){
+                this.step += 1;
+            },
+            back: function(){
+                this.step -= 1;
+            },
+            load_branch: function(){
+                this.$http.get("/apprepo/"+this.app_selected+"/list_branch").then(
+                function(response){
+                    if(response.data.result == 1){
+                        main.branch_list = response.data.data
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            commit: function(){
+                company = {
+                    'id': this.app_info.company_id,
+                    'code': this.app_info.company_code,
+                    'name': this.app_info.company_name,
+                }
+                department = {
+                    'id': this.app_info.department_id,
+                    'code': this.app_info.department_code,
+                    'name': this.app_info.department_name,
+                }
+                production = {
+                    'id': this.app_info.production_id,
+                    'code': this.app_info.production_code,
+                    'name': this.app_info.production_name,
+                }
+                this.$http.put("{{url_for('autciProjectProfile.aut_ci_project')}}", {'app_id': this.app_selected,
+                'app_name': this.app_info.name, 'app_type': this.app_info.type, 'vcs_type': this.app_info.vcs_type, 'vcs_full_url': this.app_info.vcs_project.full_url,
+                'company': company, 'department': department, 'production': production, 'branch_name': this.branch_selected, 'jdk_version': this.jdk_version}).then(
+                function(response){
+                    if(response.data.result == 1){
+                        infoModal.msg=response.data.info;
+                        infoModal.show=true;
+                        window.location.href='{{url_for("autciProjectProfile.aut_ci_project_list")}}';
+                    }else{
+                        errorModal.msg=response.data.info;
+                        errorModal.show=true;
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            }
+        },
+        watch: {
+            app_selected: function(val){
+                this.branch_selected='';
+                this.jdk_version='';
+                $('#branch_selected').val('')
+                if(val){
+                    this.$http.get("/apprepo/"+val+"/info").then(
+                    function(response){
+                        if(response.data.result == 1){
+                            main.app_info = response.data.data;
+                            main.jdk_version = response.data.data.configs.jdk_version + "";
+                            this.load_branch();
+                        }else{
+                            errorModal.msg='未找到匹配应用。';
+                            errorModal.show=true;
+                        }
+                    },function(res){
+                        errorModal.msg='网络连接异常，请稍后重试。';
+                        errorModal.show=true;
+                    });
+                }
+            }
+        }
+    });
+
+    $(document).ready(function(){
+        $("#branch_selected").change(function(){
+            main.branch_selected = $("#branch_selected").val()
+        });
+    })
+</script>
+{% endblock %}

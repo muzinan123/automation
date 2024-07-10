@@ -1,0 +1,132 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n0" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/mermaid.forest.css') }}" />
+    <div class="admin-content-body" style="height:100%;">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">流程配置</strong> / <small>发布流程</small> / <small>{{flow_info.id}}</small></div>
+        </div>
+        <hr>
+        <div class="am-g" id="list">
+            <div class="am-u-sm-12 am-u-md-8">
+                <div class="am-panel am-panel-default" >
+                    <div class="am-panel-hd">流程图</div>
+                    <div class="am-panel-bd">
+                        <div style="height:100%;overflow:auto;">
+                            <div id="mermaid" style="margin:0 auto;text-align:center;min-width:1024px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="am-u-sm-12 am-u-md-4">
+                <div class="am-panel am-panel-default" >
+                    <div class="am-panel-hd">操作</div>
+                    <div class="am-panel-bd">
+                        {% if flow_info.current_flow_info.directions %}
+                        {% for dk, dv in flow_info.current_flow_info.directions.items() %}
+                        <a class="am-btn am-btn-default am-btn-xs" href="#" @click="flow_go('{{flow_info.id}}', '{{dk}}')" style="margin-left:2px;margin-right:2px;">{{dv.name}}</a>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="am-u-sm-12 am-u-md-4">
+                <div class="am-panel am-panel-default" >
+                    <div class="am-panel-hd">流程信息</div>
+                    <table class="am-table am-panel-bd">
+                        <thead>
+                            <tr>
+                                <th>节点</th>
+                                <th>结果</th>
+                                <th>开始时间</th>
+                                <th>更新时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in task_list %}
+                            <tr>
+                                <td>{{task.type}}</td>
+                                <td>{{task.go|notnone}}</td>
+                                <td>{{task.create_at}}</td>
+                                <td>{{task.modify_at}}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/mermaidAPI.min.js') }}"></script>
+<script language="JavaScript">
+    var list = new Vue({
+        el: '#list',
+        data: {
+            flow_task_info: {},
+            flow_type: 'default',
+            current_task_type: '{{flow_info.current_task_type}}'
+        },
+        methods: {
+            load_task_list: function(){
+                this.$http.get("{{url_for('flowProfile.load_flow_svg')}}", {'params':{"flow_type":list.flow_type,"current_task_type":list.current_task_type}, emulateJSON: true}).then(
+                function(response){
+                    mermaidAPI.initialize({
+                        startOnLoad:false
+                    });
+                    $(function(){
+                        var insertSvg = function(svgCode, bindFunctions){
+                            $("#mermaid").html(svgCode);
+                        };
+                        var graphDefinition = response.data.data.svg;
+                        var graph = mermaidAPI.render('workflow', graphDefinition, insertSvg);
+                    });
+                },
+                function(res){
+                    console.log(response);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            },
+            flow_go: function(flow_id, direction){
+                this.$http.post("{{url_for('flowProfile.publish_flow')}}", {'flow_id':flow_id,'direction':direction}, {emulateJSON: true}).then(
+                function(response){
+                    console.log(response.data)
+                    if(response.data.result == 1){
+                        window.location.reload();
+                    }else{
+                        errorModal.msg='流程操作失败。';
+                        errorModal.show=true;
+                    }
+                },
+                function(res){
+                    console.log(response);
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                })
+            }
+        }
+    });
+    var callback = function(e){
+        console.log(e)
+    }
+    $(document).ready(function() {
+
+        list.load_task_list();
+
+    });
+
+</script>
+{% endblock %}

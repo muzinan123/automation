@@ -1,0 +1,50 @@
+
+.za-doc-content {
+  float: left;
+  width: 90%;
+  padding: 0px 0px 0px 80px;
+  margin-left: 200px;
+  margin-top: 20px;
+  overflow: hidden;
+}
+.ul2{
+    margin-left: -20px;
+    padding: 0;
+}
+.ul3{
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+ul li {
+    list-style-type:none;
+    font-weight: bold;
+    line-height: 30px;
+}
+h2,h3,h4,h5,h6 {
+  margin-top: 1rem;
+  font-weight: bold;
+  cursor: text;
+}
+p {
+    margin: 15px 0px 10px 0px;
+    text-indent: 2em;
+}
+.centers{
+    width: 94%;
+    text-align: center;
+}
+.span4{
+    padding-left:50px;
+}
+.footer {
+    position: fixed;
+    left: 0px;
+    bottom: 0px;
+    height: 50px;
+    width: 95%;
+    z-index: 9999;
+}
+
+menu a {
+    color: white;
+}

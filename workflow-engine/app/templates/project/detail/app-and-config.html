@@ -1,0 +1,263 @@
+            <div class="am-tab-panel am-active" id="tab2">
+
+                <div class="am-panel am-panel-default" id="app">
+                    <div class="am-panel-hd">应用代码</div>
+                    <div class="am-panel-bd">
+                        <a v-if="code_review_status == 0 && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)" class="am-btn am-btn-sm am-btn-success" @click="new_app_branch" href="#">新增</a>
+                        <table v-if = "app_branch_list.length > 0 || share_branch_list.length > 0" class="am-table am-table-bordered am-table-striped am-table-compact">
+                            <thead v-if = "app_branch_list.length > 0">
+                                <tr>
+                                    <th>排序</th>
+                                    <th width="40px"></th>
+                                    <th width="200px">应用</th>
+                                    <th width="100px">类型</th>
+                                    <th width="150px">功能类型</th>
+                                    <th>地址</th>
+                                    <th>初始版本</th>
+                                    <th>提测版本</th>
+                                    <th width="20%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody v-if = "app_branch_list.length > 0">
+                                <tr v-for="line, idx in app_branch_list">
+                                    <td>
+                                        ${idx}
+                                    </td>
+                                     <td style="width:40px" v-if="app_branch_list.length >1 && !code_review_status && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)">
+                                        <span v-if="app_branch_list.indexOf(line)==0">
+                                            <a href="#" @click="sort(line.order,app_branch_list.indexOf(line),1,0)"><i class="am-icon-sort-desc" ></i></a>
+
+                                        </span>
+                                        <span v-else-if="app_branch_list.indexOf(line)==app_branch_list.length-1">
+                                            <a href="#" @click="sort(line.order,app_branch_list.indexOf(line),-1,0)"><i class="am-icon-sort-asc" ></i></a>
+
+                                        </span>
+                                        <span v-else>
+                                            <a href="#" @click="sort(line.order,app_branch_list.indexOf(line),1,0)"><i class="am-icon-sort-desc" ></i></a>
+
+                                            <a href="#" @click="sort(line.order,app_branch_list.indexOf(line),-1,0)"><i class="am-icon-sort-asc" ></i></a>
+
+                                        </span>
+                                     </td>
+                                    <td v-else></td>
+                                    <td >${line.app_name}</td>
+                                    <td>${line.app_type}</td>
+                                    <td>${line.f_type}</td>
+                                    <td>
+                                        <a v-if="line.vcs_type=='svn'" target="_blank" :href="line.vcs_full_url+'/branch/'+line.branch">${line.vcs_full_url}/branch/${line.branch}</a>
+                                    </td>
+                                    <td>${line.original}</td>
+                                    <td>${line.submit_test}</td>
+                                    <td>
+                                        <div v-if="code_review_status == 0 && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)">
+                                            <a href="#" @click="edit(line.app_name, line.f_type, app_branch_list.indexOf(line), 0)" class="am-btn am-btn-sm am-btn-secondary">编辑</a>
+                                            <a href="#" @click="recreate(line.app_id, line.version, app_branch_list.indexOf(line), line.app_type)" class="am-btn am-btn-sm am-btn-warning">重新拉取</a>
+                                            <a href="#" @click="del(line.app_id, line.version)" class="am-btn am-btn-sm am-btn-danger">删除分支</a>
+                                        </div>
+                                        <a href="#" @click="review(line.app_id, line.branch, line.original, line.submit_test, line.review_token)" class="am-btn am-btn-sm am-btn-success">Review</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tbody v-if = "app_branch_list.length > 0 && share_branch_list.length > 0">
+                                <tr>
+                                    <td colspan="9"></td>
+                                </tr>
+                            </tbody>
+                            <thead v-if = "share_branch_list.length > 0">
+                                <tr>
+                                    <th>排序</th>
+                                    <th width="40px"></th>
+                                    <th width="200px">应用</th>
+                                    <th width="100px">类型</th>
+                                    <th width="150px">功能类型</th>
+                                    <th>地址</th>
+                                    <th>初始版本</th>
+                                    <th>提测版本</th>
+                                    <th width="20%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody v-if = "share_branch_list.length > 0">
+                                <tr v-for="line, idx in share_branch_list">
+                                    <td>
+                                        ${idx}
+                                    </td>
+                                    <td v-if="share_branch_list.length >1 && !code_review_status && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)">
+                                        <span v-if="share_branch_list.indexOf(line)==0">
+                                            <a  href="#" @click="sort(line.order,share_branch_list.indexOf(line),1,1)"><i class="am-icon-sort-desc" ></i></a>
+                                        </span>
+                                        <span v-else-if="share_branch_list.indexOf(line)==share_branch_list.length-1">
+                                            <a href="#" @click="sort(line.order,share_branch_list.indexOf(line),-1,1)"><i class="am-icon-sort-asc" ></i></a>
+                                        </span>
+                                        <span v-else>
+                                            <a href="#" @click="sort(line.order,share_branch_list.indexOf(line),1,1)"><i class="am-icon-sort-desc" ></i></a>
+                                            <a href="#" @click="sort(line.order,share_branch_list.indexOf(line),-1,1)"><i class="am-icon-sort-asc" ></i></a>
+                                        </span>
+                                    </td>
+                                    <td v-else></td>
+                                    <td >${line.app_name}</td>
+                                    <td>${line.app_type}</td>
+                                    <td>${line.f_type}</td>
+                                    <td>
+                                        <a v-if="line.vcs_type=='svn'" target="_blank" :href="line.vcs_full_url+'/branch/'+line.branch">${line.vcs_full_url}/branch/${line.branch}</a>
+                                    </td>
+                                    <td>${line.original}</td>
+                                    <td>${line.submit_test}</td>
+                                    <td>
+                                        <div v-if="code_review_status == 0 && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)">
+                                            <a href="#" @click="edit(line.app_name, line.f_type, share_branch_list.indexOf(line), 1)" class="am-btn am-btn-sm am-btn-secondary">编辑</a>
+                                            <a href="#" @click="recreate(line.app_id, line.version, share_branch_list.indexOf(line), line.app_type)" class="am-btn am-btn-sm am-btn-warning">重新拉取</a>
+                                            <a href="#" @click="del(line.app_id, line.version)" class="am-btn am-btn-sm am-btn-danger">删除分支</a>
+                                        </div>
+                                        <a href="#" @click="review(line.app_id, line.branch, line.original, line.submit_test, line.review_token)" class="am-btn am-btn-sm am-btn-success">Review</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="am-panel am-panel-default" id="sqlreview">
+                    <div class="am-panel-hd">SQL脚本<span> (SQL提交规范请参阅：<a href="http://wiki.zhonganonline.com/pages/viewpage.action?pageId=16766688" target="_blanck" style="color:red;">审核规范</a>)</span></div>
+                    <div class="am-panel-bd">
+                        <div v-if="publish_status==0">
+                            <a v-if = "'{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1" class="am-btn am-btn-sm am-btn-success" @click="add_sql" href="#">新增</a>
+                            <a v-if = "'{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1" class="am-btn am-btn-sm am-btn-secondary" @click="edit_sql" href="#">编辑</a>
+                            <a v-if="'{{session['userId']}}' == owner_id" href="#" @click="del_sql" class="am-btn am-btn-sm am-btn-danger">删除</a>
+                        </div>
+                        <table v-if = "sql_list" class="am-table am-table-bordered am-table-striped am-table-compact">
+                            <thead>
+                                <tr>
+                                    <th>SQL脚本地址</th>
+                                    <th>提测版本</th>
+                                    <th>环境</th>
+                                    <th>发布前后</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="dv, dk in sql_list.sql_execution_config">
+                                    <td><a v-bind:href="sql_list.vcs_full_url+'/'+dk">${sql_list.vcs_full_url}/${dk}</a></td>
+                                    <td>
+                                        <span v-if="sql_list.status[dk] == 'init'">-</span>
+                                        <span v-else>${sql_list.submited_test_version[dk]}</span>
+                                    </td>
+                                    <td>
+                                        <span v-if="dk=='prd'">生产</span>
+                                        <span v-else-if="dk=='pre'">预发</span>
+                                    </td>
+                                    <td>
+                                        <span v-if="dv.execution_before">发布前</span>
+                                        <span v-if="dv.execution_after">发布后</span>
+                                    </td>
+                                    <td>${sql_list.status[dk]|sql_review_status}</td>
+                                    <td>
+                                        <div v-if = "'{{session['userId']}}' == owner_id && dk != 'aut' && (sql_list.status[dk] != 'init' || code_review_status) && sql_list.status[dk] != 'review' && sql_list.status[dk] != 'execute'" >
+                                            <span v-if="!sql_list.processing[dk]" href="#" @click="sql_review(dk)" class="am-btn am-btn-sm am-btn-warning">重新审核</span>
+                                            <span v-show="sql_list.processing[dk]" href="#" class="am-btn am-btn-sm am-btn-secondary">提交中</span>
+                                            <span  v-if="sql_list.status[dk] != 'success' && sql_list.status[dk] != 'init'" href="#" @click="disable_sql_execute(dk)" class="am-btn am-btn-sm am-btn-danger">删除</span>
+                                        </div>
+                                        <div>
+
+                                        </div>
+                                        <div v-if = "user_show['dba'] == 2 && sql_list.status[dk] == 'review'">
+                                            <span v-if="!sql_list.processing[dk]" href="#" @click="update_sql_review_status(dk, 'pass', true)" class="am-btn am-btn-sm am-btn-success">通过</span>
+                                            <span v-if="!sql_list.processing[dk]" href="#" @click="update_sql_review_status(dk, 'not_pass', true)" class="am-btn am-btn-sm am-btn-warning">不通过</span>
+                                            <span v-if="sql_list.processing[dk]" href="#" class="am-btn am-btn-sm am-btn-secondary">更新中</span>
+                                        </div>
+                                        <div v-if = "user_show['dba'] == 2 && sql_list.status[dk] == 'not_pass'">
+                                            <span v-if="!sql_list.processing[dk]" href="#" @click="update_sql_review_status(dk, 'pass', false)" class="am-btn am-btn-sm am-btn-success">通过</span>
+                                            <span v-if="!sql_list.processing[dk]" href="#" @click="update_sql_review_status(dk, 'not_pass', false)" class="am-btn am-btn-sm am-btn-warning">不通过</span>
+                                            <span v-if="sql_list.processing[dk]" href="#" class="am-btn am-btn-sm am-btn-secondary">更新中</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="am-panel am-panel-default" id="config">
+                    <div class="am-panel-hd">配置文件</div>
+                    <div class="am-panel-bd">
+                        <a v-if = "(code_review_status == 0 && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)) || user_show['pe'] == 2" class="am-btn am-btn-sm am-btn-success" @click="new_antx" href="#">新增Antx配置</a>
+                        <a v-if = "(code_review_status == 0 && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)) || user_show['pe'] == 2" class="am-btn am-btn-sm am-btn-secondary" @click="new_diamond" href="#">拉取Diamond配置</a>
+                        <table v-if = "antx_list.length > 0 || diamond_list.length > 0" class="am-table am-table-bordered am-table-striped am-table-compact">
+                            <thead>
+                                <tr>
+                                    <th>名称</th>
+                                    <th>类型</th>
+                                    <th>环境</th>
+                                    <th v-if="need_review">审批状态</th>
+                                    <th width="20%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="line in antx_list">
+                                    <td>${line.app_name}</td>
+                                    <td>antx配置</td>
+                                    <td>${line.env}</td>
+                                    <td v-if="need_review">
+                                        <span v-if="line.review_status=='pass'">通过</span>
+                                        <span v-else-if="line.review_status=='refuse'">不通过</span>
+                                        <span v-else>待审批</span>
+                                    </td>
+                                    <td>
+                                        <a v-if="view_ids.indexOf('{{session['userId']}}')>-1 || user_show['pe'] == 2" href="#" @click="show_antx(line.app_id, line.env)" class="am-btn am-btn-sm am-btn-primary">查看</a>
+                                        <span v-if = "(code_review_status == 0 && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)) || user_show['pe'] == 2">
+                                            <a href="#" @click="edit_antx(line.app_id, line.env)" class="am-btn am-btn-sm am-btn-warning">编辑</a>
+                                            <a href="#" @click="del_antx(line.app_id, line.env)" class="am-btn am-btn-sm am-btn-danger">删除</a>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr v-for="line in diamond_list">
+                                    <td>${line.data_id}</td>
+                                    <td>diamond配置</td>
+                                    <td>${line.env}</td>
+                                    <td v-if="need_review">
+                                        <span v-if="line.review_status=='pass'">通过</span>
+                                        <span v-else-if="line.review_status=='refuse'">不通过</span>
+                                        <span v-else>待审批</span>
+                                    </td>
+                                    <td >
+                                        <a v-if="view_ids.indexOf('{{session['userId']}}')>-1 || user_show['pe'] == 2" href="#" @click="show_diamond(line.data_id, line.env)" class="am-btn am-btn-sm am-btn-primary">查看</a>
+                                        <span v-if = "(code_review_status == 0 && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)) || user_show['pe'] == 2">
+                                            <a href="#" @click="edit_diamond(line.data_id, line.env)" class="am-btn am-btn-sm am-btn-warning">编辑</a>
+                                            <a href="#" @click="del_diamond(line.data_id, line.env)" class="am-btn am-btn-sm am-btn-danger">删除</a>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="am-panel am-panel-default" id="dzbd">
+                    <div class="am-panel-hd">电子保单模板(仅出单类应用涉及电子保单模板发布，其他应用无需拉取电子保单模板分支)</div>
+                    <div class="am-panel-bd">
+                        <a v-if="bd_list.length == 0 && code_review_status == 0 && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)" class="am-btn am-btn-sm am-btn-success" @click="add()" href="#">新增</a>
+                        <table class="am-table am-table-bordered am-table-striped am-table-compact" v-else>
+                            <thead>
+                                <tr>
+                                    <th>保单模板SVN地址(请将保单模板上传到以下SVN目录)</th>
+                                    <th>初始版本</th>
+                                    <th>提测版本</th>
+                                    <th width="20%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="line in bd_list">
+                                    <td >
+                                        ${line.vcs_full_url+'/branch/'+line.branch}
+                                    </td>
+                                    <td>${line.original}</td>
+                                    <td>${line.submit_test}</td>
+                                    <td>
+                                        <div v-if="code_review_status == 0 && ('{{session['userId']}}' == owner_id || developers.indexOf('{{session['userId']}}') > -1)">
+                                            <a href="#" @click="recreate(line.version)" class="am-btn am-btn-sm am-btn-warning">重新拉取</a>
+                                            <a href="#" @click="del(line.version)" class="am-btn am-btn-sm am-btn-danger">删除分支</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+			</div>

@@ -1,0 +1,268 @@
+{% extends "framework/frame.html" %}
+
+{% block manual %}
+<a href="{{url_for('baseProfile.manual_explain')}}#n6" style="font-size:18px;">
+    <span class="am-header-nav-title">
+        <i class="am-header-icon am-icon-compass am-icon-sm am-icon-spin" style="color:red;"></i>
+        操作指南
+    </span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="admin-content-body">
+    <div class="am-cf am-padding">
+        <div class="am-cf"><strong class="am-text-primary am-text-lg">项目列表</strong></div>
+    </div>
+    <div class="am-g" id="project_list" v-cloak >
+        <div class="am-u-sm-12 am-u-md-12" style="overflow:auto;min-height:500px">
+            <table class="am-table am-table-compact am-form">
+                <tr>
+                    <td width="8%">项目名称</td>
+                    <td width="25%">
+                        <input type="text" v-model="name" placeholder="请填写项目名称" style="width:50%"/>
+                    </td>
+                    <td width="8%">项目状态</td>
+                    <td width="25%">
+                        <select v-model="publish_status" id="publish_status" class="am-form-field" data-am-selected="{btnWidth: '50%'}" multiple>
+                            <option value="0">未发布</option>
+                            <option value="1">发布中</option>
+                            <option value="2">已完成</option>
+                        </select>
+                    </td>
+                    <td width="8%">参与人</td>
+                    <td width="25%">
+                        <input type="text" v-model="participant" placeholder="登录名、姓名" style="width:50%"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="5%">创建时间</td>
+                    <td width="15%">
+                        <input type="text" class="am-form-field" id="begin_date_start" placeholder="开始时间" style="width:45%;display:inline-block;"/>&nbsp-
+                        <input type="text" class="am-form-field" id="begin_date_end" placeholder="结束时间" style="width:45%;display:inline-block;"/>
+                    </td>
+
+                    <td width="5%">发布时间</td>
+                    <td width="15%">
+                        <input type="text" class="am-form-field" id="publish_date_start" placeholder="开始时间" style="width:45%;display:inline-block;"/>&nbsp-
+                        <input type="text" class="am-form-field" id="publish_date_end" placeholder="结束时间" style="width:45%;display:inline-block;"/>
+                    </td>
+                    <td width="5">部门</td>
+                    <td width="15%">
+                        <select id="department" multiple data-am-selected="{maxHeight: 400}" placeholder="请选择部门名称" >
+                            <optgroup :label="one.name" v-for="one in dept_list">
+                              <option :value="e.value" v-for="e in one.depts">${e.label}</option>
+                            </optgroup>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="5%"> <button type="button" class="am-btn am-btn-success" @click="load_project_list(1)">搜索</button></td>
+                </tr>
+            </table>
+            <hr>
+            <table class="am-table am-table-bordered am-table-striped am-table-compact" >
+                <thead>
+                <tr>
+                    <th class="table-title">项目ID/名称/别名</th>
+                    <th class="table-title">部门</th>
+                    <th class="table-title am-hide-sm-only" width="5%">类型</th>
+                    <th class="table-title">开始日期</th>
+                    <th class="table-title">预发日期</th>
+                    <th class="table-title">Owner</th>
+                    <th class="table-title">BA</th>
+                    <th class="table-title am-hide-sm-only">CodeReview</th>
+                    <th class="table-title am-hide-sm-only">测试状态</th>
+                    <th class="table-title am-hide-sm-only">审批状态</th>
+                </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="line in project_list">
+                        <td>
+                            <a @click="go_detail(line.id)" href="#">
+                                ${line.id}<br>
+                                ${line.name}<br>
+                                ${line.alias}
+                            </a>
+                        </td>
+                        <td><span v-if="line.dept_label">${line.dept_label}</span></td>
+                        <td class="am-hide-sm-only">
+                            ${line.type|get_project_type}
+                        </td>
+                        <td class="am-hide-sm-only">${line.begin_date}</td>
+                        <td class="am-hide-sm-only">${line.expect_publish_date}</td>
+                        <td><span v-if="line.owner_id">${line.owner.real_name}</span></td>
+                        <td><span v-if="line.ba_id">${line.ba.real_name}</span></td>
+                        <td>
+                            ${line.code_review_status|get_review_status}
+                        </td>
+                        <td class="am-hide-sm-only">
+                            ${line.test_status|get_test_status}
+                        </td>
+                        <td class="am-hide-sm-only">
+                            ${line.publish_status|get_publish_status}
+                        </td>
+
+                    </tr>
+                </tbody>
+            </table>
+            <div class="am-cf">
+                共 <span id="total">${total}</span> 条记录
+                <div class="am-fr" id="paging">
+                    <ul class="am-pagination">
+                        <li v-bind:class="{ 'am-disabled': !hasPre}"><a id="pre" href="#" @click="first">«</a></li>
+                        <template v-for="pagenum in pagenums">
+                            <li v-bind:class="{ 'am-active': now==pagenum}"><a class="paging" href="#" @click="go">${pagenum}</a></li>
+                        </template>
+                        <li v-bind:class="{ 'am-disabled': !hasNext}"><a id="next" href="#" @click="last">»</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block html %}
+{% endblock %}
+
+{% block css%}
+<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/amazeui.datetimepicker-se.min.css') }}" >
+{% endblock %}
+
+
+{% block js %}
+<script src="{{ url_for('static', filename='assets/js/moment.min.js') }}" ></script>
+<script src="{{ url_for('static', filename='assets/js/amazeui.datetimepicker-se.min.js') }}" ></script>
+<script language="JavaScript">
+    data = {
+        orderby: 'name',
+        orderdesc: false,
+        total: 0,
+        pagenums: [],
+        hasPre: true,
+        hasNext: true,
+        now: 1,
+        project_list: [],
+        name: '',
+        participant: '{{session.get('userInfo').get('name')}}',
+        publish_status: ['0','1'],
+        begin_date_start: '',
+        begin_date_end: '',
+        publish_date_start: '',
+        publish_date_end: '',
+        dept_list: []
+    };
+    var project_list = new Vue({
+        el: '#project_list',
+        data: data,
+        methods:{
+            go_detail:function (project_id) {
+                window.open("/project/detail/" + project_id, target="_blank");
+            },
+            first: function(event){
+                this.load_project_list(1);
+            },
+            go: function(event){
+                this.load_project_list(event.target.innerHTML);
+            },
+            last: function(event){
+                this.load_project_list(data.totalPage);
+            },
+            filter: function(event){
+                this.now = 1
+                this.load_project_list(this.now);
+            },
+            sort: function(orderby){
+
+            },
+            load_project_list:function (p) {
+                this.now = p;
+                this.publish_status = $('#publish_status').val();
+                publish_status = $('#publish_status').val().join(',');
+                begin_date_start = $("#begin_date_start").val();
+                begin_date_end = $("#begin_date_end").val();
+                publish_date_start = $("#publish_date_start").val();
+                publish_date_end = $("#publish_date_end").val();
+                if($('#department').val()){
+                    department_id_list = $('#department').val().join(',');
+                }else{
+                    department_id_list = "";
+                }
+                this.$http.get("{{url_for('projectProfile.project_list')}}",{params: {"p": p, "name":this.name,
+                "participant":this.participant, "publish_status":publish_status, "begin_date_start":begin_date_start,
+                 "begin_date_end":begin_date_end, "publish_date_start":publish_date_start, "publish_date_end":publish_date_end,
+                 "department_id_list":department_id_list,
+                 "r":Math.random()}, emulateJSON: true}).then(
+                    function (response) {
+                        if(response.data.result == 1){
+                            this.project_list = response.data.data.projectList;
+                            this.total = response.data.data.total;
+                            paging(response.data.data.prevNum, response.data.data.nextNum, response.data.data.total, response.data.data.perPage)
+                        }
+                },function () {
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            load_app_company: function() {
+                this.$http.get("{{config['APPREPO_URL']}}/api/app/company/list", {params: {"r":Math.random()}, emulateJSON: true}).then(
+                function(response){
+                    if(response.data.result == 1){
+                        data.dept_list = []
+                        response.data.data.companyList.forEach(function(e){
+                            project_list.load_app_department(e.value, e.full_name)
+                        });
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            },
+            load_app_department: function(company_id, company_name) {
+                this.$http.get("{{config['APPREPO_URL']}}/api/app/department/list", {params: {"company_id":company_id, "r":Math.random()}, emulateJSON: true}).then(
+                function(response){
+                    if(response.data.result == 1){
+                        data.dept_list.push({'name': company_name, 'depts': response.data.data.departmentList})
+                    }
+                },function(res){
+                    errorModal.msg='网络连接异常，请稍后重试。';
+                    errorModal.show=true;
+                });
+            }
+        }
+    });
+
+    $(document).ready(function() {
+        project_list.load_project_list();
+        $('#begin_date_start').datetimepicker({
+            format: 'YYYY-MM-DD'
+        });
+        $('#begin_date_end').datetimepicker({
+            format: 'YYYY-MM-DD'
+        });
+        $('#publish_date_start').datetimepicker({
+            format: 'YYYY-MM-DD'
+        });
+        $('#publish_date_end').datetimepicker({
+            format: 'YYYY-MM-DD'
+        });
+        project_list.load_app_company()
+    });
+    function paging(prevNum, nextNum, total, perPage){
+        totalPage = Math.ceil(total/perPage)
+        data.totalPage = totalPage
+        data.hasPre = prevNum>0;
+        data.hasNext = nextNum<=totalPage;
+
+        offset = data.now - 2
+        offset = offset<(totalPage-4)?offset:(totalPage-4)
+        offset = offset>0?offset:1
+        showTotal = 5>totalPage?totalPage:5
+        data.pagenums = [];
+        for(var i=offset;i<offset+showTotal;i++){
+            data.pagenums.push(i);
+        }
+    }
+</script>
+{% endblock %}

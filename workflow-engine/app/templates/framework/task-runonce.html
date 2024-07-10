@@ -1,0 +1,161 @@
+{% extends "framework/frame.html" %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">定时任务</strong> / <small>手工调度</small></div>
+        </div>
+        <hr>
+        <div class="am-g" id="list">
+            <div class="am-u-sm-12">
+                <table class="am-table am-table-striped am-table-hover table-main" id="schedule_list">
+                    <thead>
+                        <tr>
+                            <th class="table-title">任务名称</th>
+                            <th class="table-title">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(line, key) in taskList">
+                            <td class="">${line}</td>
+                            <td class=""><a class="am-btn am-btn-default am-btn-xs" @click="runonce" :tag="key">调度</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+
+{% endblock %}
+
+{% block html %}
+    <div id="runonceModal">
+        <modal :show="show" v-on:close="close">
+            <span slot="header">手工调度</span>
+            <div slot="body">
+                <form action="" class="am-form">
+                    <fieldset>
+                        <div class="am-form-group">
+                            <input type="text" :value="task" readonly/>
+                        </div>
+                        <div class="am-form-group">
+                            <input type="text" v-model="args" minlength="3" data-foolish-msg="请输入正确的args参数"
+                                   placeholder="输入args(json格式)" onkeydown="if(event.keyCode==13){return false;}" required/>
+                        </div>
+                        <div class="am-form-group">
+                            <input type="text" v-model="kwargs" minlength="3" data-foolish-msg="请输入正确的kwargs参数"
+                                   placeholder="输入kwargs(json格式)" onkeydown="if(event.keyCode==13){return false;}" required/>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+            <span slot="footer" class="am-modal-btn" @click="commit">提交</span>
+        </modal>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+
+    data = {
+        taskList: []
+    };
+
+    new Vue({
+        el: '#list',
+        data: data,
+        methods: {
+            runonce: function(event){
+                key = $(event.target).attr("tag");
+                task = data.taskList[key]
+                runonce_modal_data.task = task;
+                runonce_modal_data.show = true;
+            }
+        }
+    });
+
+    runonce_modal_data = {
+        show: false,
+        task: '',
+        args: '',
+        kwargs: ''
+    }
+
+    new Vue({
+        el: '#runonceModal',
+        data: runonce_modal_data,
+        methods: {
+            close: function() {
+		        this.show = false;
+		    },
+		    commit: function() {
+		        commit_task(runonce_modal_data)
+		    }
+        }
+    });
+
+    $(document).ready(function() {
+
+        load_task();
+
+    });
+    function commit_task(d){
+        $.AMUI.progress.start();
+        console.log("start load user list");
+        jQuery.ajax({
+            url: "{{url_for('baseProfile.task_runonce__runonce')}}",
+            dataType: "json",
+            data: {'task':d.task,'args':d.args,'kwargs':d.kwargs, "r":Math.random()},
+            type: "POST",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                console.log(response);
+                runonce_modal_data.show = false;
+                errorModal.title='成功';
+                errorModal.msg='提交成功!';
+                errorModal.show=true;
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                runonce_modal_data.show = false;
+                errorModal.title='错误';
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function load_task(){
+        $.AMUI.progress.start();
+        console.log("start load user list");
+        jQuery.ajax({
+            url: "{{url_for('baseProfile.task_config__task')}}",
+            dataType: "json",
+            data: {"r":Math.random()},
+            type: "GET",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                console.log(response);
+                data.taskList=[]
+                response.data.forEach(function(e){
+                    data.taskList.push(e)
+                });
+
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                console.log("error");
+                errorModal.title='错误';
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+
+</script>
+{% endblock %}

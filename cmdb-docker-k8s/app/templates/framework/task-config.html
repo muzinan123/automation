@@ -1,0 +1,476 @@
+{% extends "framework/base_with_dropdown.html" %}
+
+{% block content %}
+    <div class="admin-content-body">
+        <div class="am-cf am-padding am-padding-bottom-0">
+            <div class="am-cf"><strong class="am-text-primary am-text-lg">定时任务</strong> / <small>任务配置</small></div>
+        </div>
+        <hr>
+        <div class="am-g" id="list">
+            <div class="am-u-sm-12">
+                <div class="am-btn-group am-btn-group-xs">
+                    <button class="am-btn am-btn-default" @click="new">新建计划</button>
+                </div>
+                <table class="am-table am-table-striped am-table-hover table-main" id="schedule_list">
+                    <thead>
+                        <tr>
+                            <th class="table-id am-hide-sm-only">ID</th>
+                            <th class="table-title">计划名称</th>
+                            <th class="table-title">任务名称</th>
+                            <th class="table-title">调度类型</th>
+                            <th class="table-title am-hide-sm-only">有效</th>
+                            <th class="table-title am-hide-sm-only">执行计数</th>
+                            <th class="table-title am-hide-sm-only">最后更新</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(key, line) in schedulelist">
+                            <td class="am-hide-sm-only">${line.id}</td>
+                            <td class=""><a href="#" @click="edit" v-bind:value="key">${line.name}</a></td>
+                            <td class="">${line.task}</td>
+                            <td class="">${line.run_type}</td>
+                            <td class="am-hide-sm-only">${line.enabled}</td>
+                            <td class="am-hide-sm-only">${line.run_count}</td>
+                            <td class="am-hide-sm-only">${line.last_update}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <br>
+        <br>
+    </div>
+
+{% endblock %}
+
+{% block html %}
+
+    <div id="errorModal">
+        <dialog v-bind:show.sync="show">
+            <span slot="header">错误</span>
+            <span slot="body">${msg}</span>
+            <span slot="footer" class="am-modal-btn" @click="close">确定</span>
+        </dialog>
+    </div>
+
+    <div id="scheduleModal">
+        <dialog v-bind:show.sync="show">
+            <span slot="header">${title}</span>
+            <div slot="body">
+                <form action="" class="am-form">
+                    <fieldset>
+                        <div class="am-form-group">
+                            <input type="text" v-model="name" minlength="3" data-foolish-msg="请输入正确的计划名称"
+                                   placeholder="输入计划名称" onkeydown="if(event.keyCode==13){return false;}" required/>
+                        </div>
+                        <div class="am-form-group">
+                            <select data-am-selected="{btnWidth: '100%',placeholder:'选择任务'}" v-model="task">
+                                <template v-for="line in scheduleTaskList">
+                                    <option :value="line">${line}</option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="am-form-group">
+                            <input type="text" v-model="args" minlength="3" data-foolish-msg="请输入正确的args参数"
+                                   placeholder="输入args(json格式)" onkeydown="if(event.keyCode==13){return false;}" required/>
+                        </div>
+                        <div class="am-form-group">
+                            <input type="text" v-model="kwargs" minlength="3" data-foolish-msg="请输入正确的kwargs参数"
+                                   placeholder="输入kwargs(json格式)" onkeydown="if(event.keyCode==13){return false;}" required/>
+                        </div>
+                        <div class="am-panel am-panel-secondary">
+                            <div class="am-panel-hd" style="padding:0px;">
+                                <select data-am-selected="{btnWidth: '100%'}" v-model="run_type">
+                                    <option value="interval">间隔时间</option>
+                                    <option value="crontab">特定时间</option>
+                                </select>
+                            </div>
+                            <div class="am-panel-bd am-g">
+                                <div v-if="run_type==='interval'">
+                                    <div class="am-form-group am-u-sm-6">
+                                        <input type="text" v-model="every" placeholder="Every" onkeydown="if(event.keyCode==13){return false;}" required/>
+                                    </div>
+                                    <div class="am-u-sm-6">
+                                        <select data-am-selected="{btnWidth: '100%'}" v-model="period">
+                                            <option value="microseconds">毫秒</option>
+                                            <option value="seconds">秒</option>
+                                            <option value="minutes">分钟</option>
+                                            <option value="hours">小时</option>
+                                            <option value="days">天</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div v-if="run_type==='crontab'">
+                                    <ul class="am-avg-sm-5 am-thumbnails">
+                                        <li class="am-thumbnail" style="border:0px;">分</li>
+                                        <li class="am-thumbnail" style="border:0px;">时</li>
+                                        <li class="am-thumbnail" style="border:0px;">天(周)</li>
+                                        <li class="am-thumbnail" style="border:0px;">天(月)</li>
+                                        <li class="am-thumbnail" style="border:0px;">月(年)</li>
+                                    </ul>
+                                    <ul class="am-avg-sm-5 am-thumbnails">
+                                        <li class="am-thumbnail" style="border:0px;">
+                                            <input type="text" v-model="minute" maxlength="2" placeholder="*" onkeydown="if(event.keyCode==13){return false;}" required/>
+                                        </li>
+                                        <li class="am-thumbnail" style="border:0px;">
+                                            <input type="text" v-model="hour" maxlength="2" placeholder="*" onkeydown="if(event.keyCode==13){return false;}" required/>
+                                        </li>
+                                        <li class="am-thumbnail" style="border:0px;">
+                                            <input type="text" v-model="day_of_week" maxlength="2" placeholder="*" onkeydown="if(event.keyCode==13){return false;}" required/>
+                                        </li>
+                                        <li class="am-thumbnail" style="border:0px;">
+                                            <input type="text" v-model="day_of_month" maxlength="2" placeholder="*" onkeydown="if(event.keyCode==13){return false;}" required/>
+                                        </li>
+                                        <li class="am-thumbnail" style="border:0px;">
+                                            <input type="text" v-model="month_of_year" maxlength="2" placeholder="*" onkeydown="if(event.keyCode==13){return false;}" required/>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="am-u-sm-4">
+                            <label class="am-checkbox">
+                                <input v-model="enabled" type="checkbox" value="" data-am-ucheck> 有效
+                            </label>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+            <span slot="footer" class="am-modal-btn" v-if="is_new" @click="create">提交</span>
+            <span slot="footer" class="am-modal-btn" v-if="is_edit" @click="delete">删除</span>
+            <span slot="footer" class="am-modal-btn" v-if="is_edit" @click="update">修改</span>
+        </dialog>
+    </div>
+
+    <template id="dialog">
+        <div>
+            <div class="am-modal am-modal-alert" v-bind:class="{ 'am-modal-active': show }" tabindex="-1" v-if="show" style="display:block;z-index: 1501;">
+                <div class="am-modal-dialog" style="width:350px;">
+                    <div class="am-modal-hd">
+                        <slot name="header"></slot>
+                        <a href="javascript: void(0)" class="am-close am-close-spin" data-am-modal-close @click="close">&times;</a>
+                    </div>
+                    <div class="am-modal-bd">
+                        <slot name="body"></slot>
+                    </div>
+                    <div class="am-modal-footer">
+                        <slot name="footer"></slot>
+                    </div>
+                </div>
+            </div>
+            <div class="am-dimmer" data-am-dimmer v-bind:class="{ 'am-active': show }" v-if="show" style="display:block;"></div>
+        </div>
+    </template>
+{% endblock %}
+
+{% block js %}
+<script language="JavaScript">
+
+    data = {
+        schedulelist: []
+    };
+
+    new Vue({
+        el: '#list',
+        data: data,
+        methods: {
+            edit: function(event){
+                key = $(event.target).attr("value");
+                id = data.schedulelist[key].id
+                schedule_modal_data.title = '编辑计划';
+                schedule_modal_data.is_edit=true;
+                schedule_modal_data.is_new=false;
+                load_detail(id);
+            },
+            new: function(event){
+                schedule_modal_data.title = '新建计划';
+                schedule_modal_data.is_edit = false;
+                schedule_modal_data.is_new = true;
+
+                schedule_modal_data.id = '';
+                schedule_modal_data.name = '';
+                schedule_modal_data.task = '';
+                schedule_modal_data.args = '';
+                schedule_modal_data.kwargs = '';
+                schedule_modal_data.run_type = 'interval';
+                schedule_modal_data.every = '';
+                schedule_modal_data.period = 'hours';
+                schedule_modal_data.minute = '';
+                schedule_modal_data.hour = '';
+                schedule_modal_data.day_of_week = '';
+                schedule_modal_data.day_of_month = '';
+                schedule_modal_data.month_of_year = '';
+                schedule_modal_data.enabled = true;
+                schedule_modal_data.show = true;
+            }
+        }
+    });
+
+    Vue.component('dialog', {
+	    template: '#dialog',
+	    props: {
+	        show:{
+	            type: Boolean,
+	            default: false
+	        }
+	    },
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	})
+
+    schedule_modal_data = {
+        show: false,
+        title: '',
+        scheduleTaskList: [],
+
+        id: '',
+        name: '',
+        task: '',
+        args: '',
+        kwargs: '',
+        run_type: 'interval',
+        every: '',
+        period: '',
+        minute: '',
+        hour: '',
+        day_of_week: '',
+        day_of_month: '',
+        month_of_year: '',
+        enabled: true,
+
+        is_new: true,
+        is_edit: false
+    }
+
+    new Vue({
+        el: '#scheduleModal',
+        data: schedule_modal_data,
+        methods: {
+            close: function() {
+		        this.show = false;
+		    },
+		    create: function() {
+		        if(schedule_modal_data.run_type=='interval'){
+		            schedule_modal_data.minute = '';
+		            schedule_modal_data.hour = '';
+		            schedule_modal_data.day_of_week = '';
+		            schedule_modal_data.day_of_month = '';
+		            schedule_modal_data.month_of_year = '';
+		        }else if(schedule_modal_data.run_type=='crontab'){
+		            schedule_modal_data.every = '';
+		            schedule_modal_data.period = '';
+		        }
+		        create_schedule(schedule_modal_data);
+		    },
+		    update: function() {
+		        if(schedule_modal_data.run_type=='interval'){
+		            schedule_modal_data.minute = '';
+		            schedule_modal_data.hour = '';
+		            schedule_modal_data.day_of_week = '';
+		            schedule_modal_data.day_of_month = '';
+		            schedule_modal_data.month_of_year = '';
+		        }else if(schedule_modal_data.run_type=='crontab'){
+		            schedule_modal_data.every = '';
+		            schedule_modal_data.period = '';
+		        }
+		        update_schedule(schedule_modal_data)
+		    },
+		    delete: function() {
+		        id = schedule_modal_data.id;
+		        del_schedule(id);
+		    }
+        }
+    });
+
+    var errorModal = new Vue({
+	    el: '#errorModal',
+	    data: {
+			show: false,
+			msg: ''
+		},
+	    methods: {
+	        close: function() {
+		        this.show = false;
+		    }
+	    }
+	});
+    $(document).ready(function() {
+
+        load_schedule();
+        load_task();
+
+    });
+    function update_schedule(d){
+        $.AMUI.progress.start();
+        console.log("start load user list");
+        jQuery.ajax({
+            url: "{{url_for('task_config__schedule')}}",
+            dataType: "json",
+            data: {'id':d.id,'name':d.name,'task':d.task,'args':d.args,'kwargs':d.kwargs,'enabled':d.enabled,'every':d.every,'period':d.period,'minute':d.minute,'hour':d.hour,'day_of_week':d.day_of_week,'day_of_month':d.day_of_month,'month_of_year':d.month_of_year, "r":Math.random()},
+            type: "POST",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                console.log(response);
+                load_schedule();
+                schedule_modal_data.show = false;
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                console.log("error");
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function create_schedule(d){
+        $.AMUI.progress.start();
+        console.log("start load user list");
+        jQuery.ajax({
+            url: "{{url_for('task_config__schedule')}}",
+            dataType: "json",
+            data: {'name':d.name,'task':d.task,'args':d.args,'kwargs':d.kwargs,'enabled':d.enabled,'every':d.every,'period':d.period,'minute':d.minute,'hour':d.hour,'day_of_week':d.day_of_week,'day_of_month':d.day_of_month,'month_of_year':d.month_of_year, "r":Math.random()},
+            type: "PUT",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                console.log(response);
+                load_schedule();
+                schedule_modal_data.show = false;
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function del_schedule(id){
+        $.AMUI.progress.start();
+        console.log("start load schedule detail");
+        jQuery.ajax({
+            url: "{{url_for('task_config__schedule')}}",
+            dataType: "json",
+            data: {'id':id, "r":Math.random()},
+            type: "DELETE",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                console.log(response);
+                load_schedule();
+                schedule_modal_data.show = false;
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                console.log("error");
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function load_schedule(){
+        $.AMUI.progress.start();
+        console.log("start load schedule list");
+        jQuery.ajax({
+            url: "{{url_for('task_config__schedule')}}",
+            dataType: "json",
+            data: {"r":Math.random()},
+            type: "GET",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                console.log(response);
+                data.schedulelist = []
+                response.data.forEach(function(e){
+                    data.schedulelist.push(e)
+                });
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                console.log("error");
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+    function load_task(){
+        $.AMUI.progress.start();
+        console.log("start load user list");
+        jQuery.ajax({
+            url: "{{url_for('task_config__task')}}",
+            dataType: "json",
+            data: {"r":Math.random()},
+            type: "GET",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                console.log(response);
+                schedule_modal_data.scheduleTaskList=[]
+                response.data.forEach(function(e){
+                    schedule_modal_data.scheduleTaskList.push(e)
+                });
+
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                console.log("error");
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+
+    function load_detail(id){
+        $.AMUI.progress.start();
+        console.log("start load schedule detail");
+        jQuery.ajax({
+            url: "{{url_for('task_config__schedule')}}",
+            dataType: "json",
+            data: {'id':id, "r":Math.random()},
+            type: "GET",
+            timeout : timeout,
+            success: function(response) {
+                $.AMUI.progress.done();
+                console.log(response);
+                if(response.result==1){
+                    d = response.data
+                    schedule_modal_data.id = d.id;
+                    schedule_modal_data.name = d.name;
+                    schedule_modal_data.task = d.task;
+                    schedule_modal_data.args = d.args;
+                    schedule_modal_data.kwargs = d.kwargs;
+                    schedule_modal_data.run_type = d.run_type;
+                    if(d.run_type=='interval'){
+                        schedule_modal_data.every = d.every;
+                        schedule_modal_data.period = d.period;
+                    }else if(d.run_type=='crontab'){
+                        schedule_modal_data.minute = d.minute;
+                        schedule_modal_data.hour = d.hour;
+                        schedule_modal_data.day_of_week = d.day_of_week;
+                        schedule_modal_data.day_of_month = d.day_of_month;
+                        schedule_modal_data.month_of_year = d.month_of_year;
+                    }
+                    schedule_modal_data.enabled = d.enabled;
+
+                    schedule_modal_data.show = true;
+                }
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                $.AMUI.progress.done();
+                //call failed
+                console.log("error");
+                errorModal.msg='网络连接异常，请稍后重试。';
+                errorModal.show=true;
+            }
+        });
+    }
+</script>
+{% endblock %}

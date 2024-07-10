@@ -1,0 +1,60 @@
+/* Write your styles */
+
+/* .nav
+{
+    background: #555;
+    border-left: solid 3px;
+}
+ */
+.nav_active
+{
+    border-bottom: solid;
+    border-bottom-color: #00c1de;
+}
+
+.nav:hover
+{
+    border-bottom: solid;
+    border-bottom-color: #00c1de;
+}
+
+.dropdown_menu
+{
+	background:#223F66;
+	filter:alpha(Opacity=95);
+	-moz-opacity:0.96;
+	opacity: 0.95;
+	width:100%;
+	margin-top:53px;
+	color:#eee;
+	font-size:1.1em;
+	line-height:1.5;
+	position:absolute;
+	z-index:1200;
+	overflow-y:auto;
+	max-height:400px;
+	padding: 15px;
+	-webkit-box-shadow: 0 -1px 10px #2C486D;
+	-moz-box-shadow: 0 -1px 10px #2C486D;
+	box-shadow: 0 -1px 10px #2C486D;
+}
+
+.dropdown_menu div div.title
+{
+    border-bottom:solid 1px;
+    border-bottom-color:#999;
+    padding:5px;
+}
+
+.dropdown_menu div div.item
+{
+    margin-left:30px;
+    border-bottom:solid 1px;
+    border-bottom-color:#999;
+    padding:5px;
+}
+
+.dropdown_menu div div.item:hover
+{
+    background:#272727;
+}
