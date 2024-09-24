@@ -1,0 +1,438 @@
+Internal Server Error: /
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 132, in get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/jie/workspace/smallmonitor/smallmonitor/views.py", line 6, in homepage
+    response = HttpResponse(open(sys.path[0] + "/api/static/pages/index.html"))
+FileNotFoundError: [Errno 2] No such file or directory: '/home/jie/workspace/smallmonitor/api/static/pages/index.html'
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Internal Server Error: /api/app/test1
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 108, in get_response
+    response = middleware_method(request)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/middleware/common.py", line 84, in process_request
+    "settings.") % (new_url[0], new_url[1]))
+RuntimeError: You called this URL via POST, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining POST data. Change your form to point to 0.0.0.0:2332/api/app/test1/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Internal Server Error: /api/apps/
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/fields.py", line 81, in get_attribute
+    instance = instance()
+  File "/home/jie/workspace/smallmonitor/api/models.py", line 31, in convert_to_epoc
+    return self.time.strftime("%Y-%m-%d %H:%M:%S")
+AttributeError: 'App' object has no attribute 'time'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 132, in get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/generic/base.py", line 71, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 466, in dispatch
+    response = self.handle_exception(exc)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 463, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/decorators.py", line 53, in handler
+    return func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/workspace/smallmonitor/api/views.py", line 81, in app_list
+    return Response(serializer.data)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 658, in data
+    ret = super(ListSerializer, self).data
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 223, in data
+    self._data = self.to_representation(self.instance)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 598, in to_representation
+    self.child.to_representation(item) for item in iterable
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 598, in <listcomp>
+    self.child.to_representation(item) for item in iterable
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 447, in to_representation
+    attribute = field.get_attribute(instance)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/fields.py", line 401, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/fields.py", line 86, in get_attribute
+    raise ValueError('Exception raised in callable attribute "{0}"; original exception was: {1}'.format(attr, exc))
+ValueError: Exception raised in callable attribute "convert_to_epoc"; original exception was: 'App' object has no attribute 'time'
+Internal Server Error: /api/apps/
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/fields.py", line 81, in get_attribute
+    instance = instance()
+  File "/home/jie/workspace/smallmonitor/api/models.py", line 31, in convert_to_epoc
+    return self.time.strftime("%Y-%m-%d %H:%M:%S")
+AttributeError: 'App' object has no attribute 'time'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 132, in get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/generic/base.py", line 71, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 466, in dispatch
+    response = self.handle_exception(exc)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 463, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/decorators.py", line 53, in handler
+    return func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/workspace/smallmonitor/api/views.py", line 81, in app_list
+    return Response(serializer.data)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 658, in data
+    ret = super(ListSerializer, self).data
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 223, in data
+    self._data = self.to_representation(self.instance)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 598, in to_representation
+    self.child.to_representation(item) for item in iterable
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 598, in <listcomp>
+    self.child.to_representation(item) for item in iterable
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 447, in to_representation
+    attribute = field.get_attribute(instance)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/fields.py", line 401, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/fields.py", line 86, in get_attribute
+    raise ValueError('Exception raised in callable attribute "{0}"; original exception was: {1}'.format(attr, exc))
+ValueError: Exception raised in callable attribute "convert_to_epoc"; original exception was: 'App' object has no attribute 'time'
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /api/appstatistics/1
+Not Found: /api/appstatistics/1
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /api/mangerapp//manager/4//
+Not Found: /api/mangerapp//manager/4/
+Not Found: /api/mangerapp//manager/4/
+Not Found: /api/mangerapp/manager/4/
+Not Found: /api/mangerappmanager/4/
+Not Found: /api/mangerappmanager/4/
+Not Found: /api/mangerappanager/4/
+Not Found: /api/mangerapp,manager,4,
+Not Found: /api/mangerapp
+Not Found: /api/mangerapp
+Not Found: /api/mangerapp4
+Internal Server Error: /api/mangerapp/4/
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 132, in get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/generic/base.py", line 71, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 468, in dispatch
+    self.response = self.finalize_response(request, response, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 396, in finalize_response
+    % type(response)
+AssertionError: Expected a `Response`, `HttpResponse` or `HttpStreamingResponse` to be returned from the view, but received a `<class 'NoneType'>`
+Internal Server Error: /api/mangerapp/4/
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 132, in get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/generic/base.py", line 71, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 468, in dispatch
+    self.response = self.finalize_response(request, response, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 396, in finalize_response
+    % type(response)
+AssertionError: Expected a `Response`, `HttpResponse` or `HttpStreamingResponse` to be returned from the view, but received a `<class 'NoneType'>`
+Internal Server Error: /api/mangerapp/4/
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 132, in get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/generic/base.py", line 71, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 468, in dispatch
+    self.response = self.finalize_response(request, response, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 396, in finalize_response
+    % type(response)
+AssertionError: Expected a `Response`, `HttpResponse` or `HttpStreamingResponse` to be returned from the view, but received a `<class 'NoneType'>`
+Internal Server Error: /api/mangerapp/1/
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 132, in get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/generic/base.py", line 71, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 468, in dispatch
+    self.response = self.finalize_response(request, response, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 396, in finalize_response
+    % type(response)
+AssertionError: Expected a `Response`, `HttpResponse` or `HttpStreamingResponse` to be returned from the view, but received a `<class 'NoneType'>`
+Internal Server Error: /api/mangerapp/1/
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 132, in get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/generic/base.py", line 71, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 468, in dispatch
+    self.response = self.finalize_response(request, response, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 396, in finalize_response
+    % type(response)
+AssertionError: Expected a `Response`, `HttpResponse` or `HttpStreamingResponse` to be returned from the view, but received a `<class 'NoneType'>`
+Internal Server Error: /api/mangerapp/1/
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 132, in get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/generic/base.py", line 71, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 468, in dispatch
+    self.response = self.finalize_response(request, response, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 396, in finalize_response
+    % type(response)
+AssertionError: Expected a `Response`, `HttpResponse` or `HttpStreamingResponse` to be returned from the view, but received a `<class 'NoneType'>`
+Internal Server Error: /api/mangerapp/1/
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/fields.py", line 401, in get_attribute
+    return get_attribute(instance, self.source_attrs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/fields.py", line 76, in get_attribute
+    instance = getattr(instance, attr)
+AttributeError: 'App' object has no attribute 'ip'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/core/handlers/base.py", line 132, in get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/generic/base.py", line 71, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 466, in dispatch
+    response = self.handle_exception(exc)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/views.py", line 463, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/decorators.py", line 53, in handler
+    return func(*args, **kwargs)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/django/views/decorators/csrf.py", line 58, in wrapped_view
+    return view_func(*args, **kwargs)
+  File "/home/jie/workspace/smallmonitor/api/views.py", line 157, in manager_detail
+    return JsonResponse(serializer.data)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 487, in data
+    ret = super(Serializer, self).data
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 223, in data
+    self._data = self.to_representation(self.instance)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/serializers.py", line 447, in to_representation
+    attribute = field.get_attribute(instance)
+  File "/home/jie/Sandbox/python3/lib/python3.4/site-packages/rest_framework/fields.py", line 418, in get_attribute
+    raise type(exc)(msg)
+AttributeError: Got AttributeError when attempting to get a value for field `ip` on serializer `host_serializer`.
+The serializer field might be named incorrectly and not match any attribute or key on the `App` instance.
+Original exception text was: 'App' object has no attribute 'ip'.
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /api/statistics/1/
+Not Found: /api/statistics/1/
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /manager/4/api/groups/
+Not Found: /manager/4/api/hosts/
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
